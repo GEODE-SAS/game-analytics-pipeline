@@ -138,6 +138,12 @@ class Event {
         if(event.hasOwnProperty('game_time')){
           transformed_event.game_time = Number(event.game_time);
         }
+        if(event.hasOwnProperty('user')){
+          transformed_event.user = event.user;
+        }
+        if(event.hasOwnProperty('device')){
+          transformed_event.device = event.device;
+        }
         if(event.hasOwnProperty('remote_config')){
           transformed_event.remote_config = event.remote_config;
         }
@@ -188,6 +194,12 @@ class Event {
         }
         if(event.hasOwnProperty('event_data')){
           unregistered_format.event_data = event.event_data;
+        }
+        if(event.hasOwnProperty('user')){
+          unregistered_format.user = event.user;
+        }
+        if(event.hasOwnProperty('device')){
+          unregistered_format.device = event.device;
         }
         if(event.hasOwnProperty('remote_config')){
           unregistered_format.remote_config = event.remote_config;

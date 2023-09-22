@@ -13,7 +13,7 @@ else
 fi
 
 DIST_OUTPUT_BUCKET="analytics-output-bucket"
-VERSION="v5"
+VERSION="v1"
 
 # Run following commands only the first time to create bucket.
 # aws s3 mb s3://$DIST_OUTPUT_BUCKET --region $AWS_REGION

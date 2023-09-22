@@ -687,6 +687,10 @@ Resources:
               Type: string
             - Name: application_name
               Type: string
+            - Name: user
+              Type: string
+            - Name: device
+              Type: string
             - Name: event_data 
               Type: string
             - Name: remote_config
@@ -1809,6 +1813,8 @@ Resources:
                   - event_name
                   - app_version
                   - game_time
+                  - user
+                  - device
                   - remote_config
                   - event_data
               properties:
@@ -1838,6 +1844,12 @@ Resources:
                 game_time:
                   type: number
                   description: The gaming time of a session in seconds.
+                user:
+                  type: object
+                  description: JSON object detailing user data
+                device:
+                  type: object
+                  description: JSON object detailing device data
                 remote_config:
                   type: object
                   description: JSON object detailing player's A/B test groups
