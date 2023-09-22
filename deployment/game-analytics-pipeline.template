@@ -153,6 +153,7 @@ Resources:
       Environment:
         Variables:
           APPLICATIONS_TABLE: !Ref ApplicationsTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
           CACHE_TIMEOUT_SECONDS: 60
       Policies:
         Version: 2012-10-17
@@ -171,11 +172,13 @@ Resources:
             Action:
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
+              - dynamodb:PutItem
               - dynamodb:GetRecords
               - dynamodb:Query
               - dynamodb:Scan
             Resource:
               - !GetAtt ApplicationsTable.Arn
+              - !GetAtt IdempotencyTable.Arn
     Metadata:
       cfn_nag:
         rules_to_suppress:
@@ -1190,6 +1193,22 @@ Resources:
             NonKeyAttributes:
               - api_key_id
               - enabled
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+
+  IdempotencyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: event_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: event_id
+          KeyType: HASH
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:

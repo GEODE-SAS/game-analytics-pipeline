@@ -108,7 +108,15 @@ class Event {
           };
           transformed_event.metadata = metadata;
         }
-        
+
+        if (await _self.eventAlreadyProcessed(event.event_id)) {
+          return Promise.reject({
+            recordId: recordId,
+            result: 'Dropped',
+            data: new Buffer.from(JSON.stringify(input) + '\n').toString('base64')
+          });
+        }
+
         if(event.hasOwnProperty('event_id')){
           transformed_event.event_id = String(event.event_id);
         }
@@ -204,6 +212,45 @@ class Event {
     }
   }
   
+
+  /**
+   * Retrieve event_id from DynamoDB
+   * If not in Dynamo Table, add it
+   * Returns bool
+   */
+  async eventAlreadyProcessed(eventID) {
+    const params = {
+      TableName: process.env.IDEMPOTENCY_TABLE,
+      Key: {
+        event_id: eventID
+      }
+    };
+    
+    // get from DynamoDB
+    const docClient = new AWS.DynamoDB.DocumentClient(this.dynamoConfig);
+    try {
+      let data = await docClient.get(params).promise();
+      if (!_.isEmpty(data)) {
+        // This event has already been processed
+        return Promise.resolve(true);
+      } else {
+        // This event has never been processed
+        const putParams = {
+          TableName: process.env.IDEMPOTENCY_TABLE,
+          Item: {
+            event_id: eventID,
+            timestamp: Date.now()
+          }
+        };
+        await docClient.put(putParams).promise();
+        return Promise.resolve(false);
+      }
+    } catch (err) {
+      console.log(JSON.stringify(err));
+      return Promise.reject(err);
+    }
+  }
+
   /**
    * Retrieve application from DynamoDB
    * Fetches from and updates the local registered applications cache with results
