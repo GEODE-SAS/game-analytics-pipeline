@@ -109,8 +109,8 @@ class Event {
           transformed_event.metadata = metadata;
         }
 
-        if (await _self.eventAlreadyProcessed(event.event_id)) {
-          return Promise.reject({
+        if (await _self.eventAlreadyProcessed(event.event_id, event.event_timestamp)) {
+          return Promise.resolve({
             recordId: recordId,
             result: 'Dropped',
             data: new Buffer.from(JSON.stringify(input) + '\n').toString('base64')
@@ -230,7 +230,7 @@ class Event {
    * If not in Dynamo Table, add it
    * Returns bool
    */
-  async eventAlreadyProcessed(eventID) {
+  async eventAlreadyProcessed(eventID, eventTimestamp) {
     const params = {
       TableName: process.env.IDEMPOTENCY_TABLE,
       Key: {
@@ -247,11 +247,12 @@ class Event {
         return Promise.resolve(true);
       } else {
         // This event has never been processed
+        // There is 86400 seconds in one day
         const putParams = {
           TableName: process.env.IDEMPOTENCY_TABLE,
           Item: {
             event_id: eventID,
-            timestamp: Date.now()
+            expires_timestamp: eventTimestamp + 86400 * 7
           }
         };
         await docClient.put(putParams).promise();

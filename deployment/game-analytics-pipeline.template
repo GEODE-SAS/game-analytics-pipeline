@@ -1218,6 +1218,9 @@ Resources:
       SSESpecification:
         SSEEnabled: true
         SSEType: KMS
+      TimeToLiveSpecification:
+        AttributeName: expires_timestamp
+        Enabled: true
   
   
   ####################
