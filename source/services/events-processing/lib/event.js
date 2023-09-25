@@ -155,7 +155,6 @@ class Event {
         
         transformed_event.application_name = String(application.application_name);
         transformed_event.application_id = String(applicationId);
-        transformed_event.ip_adress = String(ip_adress);
         
         return Promise.resolve({
           recordId: recordId,
@@ -211,7 +210,6 @@ class Event {
         
         // Even though the application_id is not registered, let's add it to the event
         unregistered_format.application_id = String(applicationId);
-        unregistered_format.ip_adress = String(ip_adress);
         
         return Promise.resolve({
           recordId: recordId,
