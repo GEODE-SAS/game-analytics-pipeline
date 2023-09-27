@@ -23,7 +23,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-    Default: 'Yes'
+    Default: 'No'
   SolutionAdminEmailAddress:
     Type: String
     Description: |
