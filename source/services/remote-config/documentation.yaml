@@ -58,7 +58,7 @@ paths:
 
   #  ----- Backoffice Remote Config ----------------------------------
 
-  /backoffice/remote-config:
+  /backoffice/remote-configs:
     get:
       summary: Retrieve all remote configs
       description: This endpoint returns all Remote Configs
@@ -138,7 +138,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  /backoffice/remote-config/{remote_config_ID}:
+  /backoffice/remote-configs/{remote_config_ID}:
     put:
       summary: Update a Remote Config
       description: This endpoint updates a remote config.
@@ -208,7 +208,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  /backoffice/remote-config/{remote_config_ID}/activate:
+  /backoffice/remote-configs/{remote_config_ID}/activate:
     post:
       summary: Activate a Remote Config
       description: This endpoint activates a remote config.
@@ -226,7 +226,7 @@ paths:
         '204':
           description: The remote config was activated successfully
 
-  /backoffice/remote-config/{remote_config_ID}/abtest:
+  /backoffice/remote-configs/{remote_config_ID}/abtest:
     post:
       summary: Create an ABTest
       description: This endpoint creates an ABTest for a remote config
@@ -282,7 +282,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  /backoffice/remote-config/abtests/{abtest_ID}:
+  /backoffice/remote-configs/abtests/{abtest_ID}:
     put:
       summary: Update an ABTest
       description: This endpoint updates an ABtest.
@@ -308,6 +308,9 @@ paths:
               - variants
               type: object
               properties:
+                name:
+                  type: string
+                  example: LightColors
                 target_user_percent:
                   type: integer
                   example: 100
@@ -351,7 +354,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  /backoffice/remote-config/abtests/{abtest_ID}/activate:
+  /backoffice/remote-configs/abtests/{abtest_ID}/activate:
     post:
       summary: Activate an ABTest
       description: |-
@@ -392,7 +395,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  /backoffice/remote-config/abtests/{abtest_ID}/pause:
+  /backoffice/remote-configs/abtests/{abtest_ID}/pause:
     post:
       summary: Pause an ABTest
       description: |-
@@ -430,7 +433,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  /backoffice/remote-config/abtests/{abtest_ID}/promote:
+  /backoffice/remote-configs/abtests/{abtest_ID}/promote:
     post:
       summary: Promote an ABTest
       description: This endpoint promotes an ABTest by selecting the new reference_value
