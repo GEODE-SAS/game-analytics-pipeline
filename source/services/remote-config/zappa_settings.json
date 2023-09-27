@@ -1,0 +1,9 @@
+{
+    "%%ENVIRONMENT%%": {
+        "app_function": "main.app",
+        "aws_region": "%%AWS_REGION%%",
+        "project_name": "remote-config",
+        "runtime": "python3.10",
+        "role_name": "remote-config-%%ENVIRONMENT%%-ZappaLambdaExecutionRole"
+    }
+}
