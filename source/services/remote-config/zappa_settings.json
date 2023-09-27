@@ -2,8 +2,11 @@
     "%%ENVIRONMENT%%": {
         "app_function": "main.app",
         "aws_region": "%%AWS_REGION%%",
+        "environment_variables": {
+            "GEODE_ENVIRONMENT": "%%ENVIRONMENT%%"
+        },
         "project_name": "remote-config",
-        "runtime": "python3.10",
-        "role_name": "remote-config-%%ENVIRONMENT%%-ZappaLambdaExecutionRole"
+        "role_name": "remote-config-%%ENVIRONMENT%%-ZappaLambdaExecutionRole",
+        "runtime": "python3.10"
     }
 }

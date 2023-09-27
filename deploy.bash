@@ -17,7 +17,7 @@ fi
 
 DIST_OUTPUT_BUCKET="analytics-output-bucket"
 STACK_NAME="analytics-$ENVIRONMENT"
-VERSION="v2"
+VERSION="v3"
 
 # Run following commands only the first time to create bucket.
 # aws s3 mb s3://$DIST_OUTPUT_BUCKET --region $AWS_REGION
@@ -27,16 +27,16 @@ chmod +x ./build-s3-dist.sh
 chmod +x ./deploy-remote-config.sh
 
 # Build project
-# ./build-s3-dist.sh $DIST_OUTPUT_BUCKET $STACK_NAME $VERSION
+./build-s3-dist.sh $DIST_OUTPUT_BUCKET $STACK_NAME $VERSION
 
-# # Store Regional Assets to S3
-# aws s3 cp ./regional-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/$STACK_NAME/$VERSION --recursive --acl bucket-owner-full-control
+# Store Regional Assets to S3
+aws s3 cp ./regional-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/$STACK_NAME/$VERSION --recursive --acl bucket-owner-full-control
 
-# # Store Global Assets to S3
-# aws s3 cp ./global-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/$STACK_NAME/$VERSION --recursive --acl bucket-owner-full-control
+# Store Global Assets to S3
+aws s3 cp ./global-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/$STACK_NAME/$VERSION --recursive --acl bucket-owner-full-control
 
 # Deploy Remote Config API Gateway
 ./deploy-remote-config.sh $ENVIRONMENT $AWS_REGION
 
-# # Deploy CloudFormation by creating/updating Stack
-# aws cloudformation deploy --template-file ./global-s3-assets/game-analytics-pipeline.template --stack-name $STACK_NAME --capabilities CAPABILITY_IAM  --s3-bucket $DIST_OUTPUT_BUCKET-$AWS_REGION
+# Deploy CloudFormation by creating/updating Stack
+aws cloudformation deploy --template-file ./global-s3-assets/game-analytics-pipeline.template --stack-name $STACK_NAME --capabilities CAPABILITY_IAM  --s3-bucket $DIST_OUTPUT_BUCKET-$AWS_REGION
