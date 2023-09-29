@@ -47,7 +47,7 @@ paths:
                         name:
                           type: string
                           example: ButtonColor
-                        origin_value:
+                        value_origin:
                           type: string
                           enum:
                           - reference_value

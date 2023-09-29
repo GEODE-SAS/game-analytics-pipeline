@@ -262,7 +262,7 @@ class RemoteConfig:
         This method returns a dict that represents the remote config with user specifications.
         It assigns user to a group of the ABTest if he has not been assigned.
         """
-        origin_value = "reference_value"
+        value_origin = "reference_value"
         value = self.reference_value
 
         if abtest:
@@ -275,12 +275,12 @@ class RemoteConfig:
                     self.__data["reference_value"],
                     abtest.variants,
                 )
-            origin_value = "abtest" if user_abtest.is_in_test else "reference_value"
+            value_origin = "abtest" if user_abtest.is_in_test else "reference_value"
             value = user_abtest.value
 
         return {
             "name": self.name,
-            "origin_value": origin_value,
+            "value_origin": value_origin,
             "value": value,
         }
 
