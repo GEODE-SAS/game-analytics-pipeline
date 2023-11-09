@@ -124,7 +124,7 @@ def __slack_message(channel: str, token: str, crash_rate: dict[str, Any]):
                             f"• Impacted Users: {crash_rate['rate_impacted_users']}%",
                             f"• Crash Free Sessions: {crash_rate['rate_crash_free_sessions']}%",
                             f"<{constants.UNITY_CRASH_URL.replace('%%PROJECT_ID%%', constants.UNITY_PROJECTS[application_name])}|View Crash Report>",
-                            "This crash will be re-evaluated in 24 hours.",
+                            "This report will be re-evaluated in 24 hours.",
                         ]
                     ),
                     "color": "#FF0000",
