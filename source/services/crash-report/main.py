@@ -110,7 +110,14 @@ def __slack_secrets() -> tuple[str, str]:
 
 def __slack_message(channel: str, token: str, crash_rate: dict[str, Any]):
     application_name = crash_rate["application_name"]
+    app_version = crash_rate["app_version"]
+    bundle_ID = ".".join(application_name.split(".")[1:])
     is_china = "cn" in constants.REGION_NAME
+
+    base_url = constants.UNITY_CRASH_URL.replace(
+        "%%PROJECT_ID%%", constants.UNITY_PROJECTS[application_name]
+    )
+    url = f"{base_url}?&name.keyword={bundle_ID}&is_editor=False&tag=%21%3DClosed&version.keyword={app_version}"
 
     response = requests.post(
         "https://slack.com/api/chat.postMessage",
@@ -118,12 +125,12 @@ def __slack_message(channel: str, token: str, crash_rate: dict[str, Any]):
         json={
             "attachments": [
                 {
-                    "title": f"Crash Report Alert - {application_name} {'CHINA' if is_china else ''} - {crash_rate['app_version']}",
+                    "title": f"Crash Report Alert - {application_name} {'CHINA' if is_china else ''} - {app_version}",
                     "text": "\n".join(
                         [
                             f"• Impacted Users: {crash_rate['rate_impacted_users']}%",
                             f"• Crash Free Sessions: {crash_rate['rate_crash_free_sessions']}%",
-                            f"<{constants.UNITY_CRASH_URL.replace('%%PROJECT_ID%%', constants.UNITY_PROJECTS[application_name])}|View Crash Report>",
+                            f"<{url}|View Crash Report>",
                             "This report will be re-evaluated in 24 hours.",
                         ]
                     ),

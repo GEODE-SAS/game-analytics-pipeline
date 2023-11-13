@@ -15,7 +15,7 @@ RATE_CRASH_FREE_SESSIONS_THRESHORD = 95
 
 REGION_NAME = os.environ["AWS_REGION"]
 
-UNITY_CRASH_URL = "https://dashboard.unity3d.com/gaming/organizations/1374503911903/projects/%%PROJECT_ID%%/cloud-diagnostics/crashes-exceptions?tag=%21%3DClosed"
+UNITY_CRASH_URL = "https://dashboard.unity3d.com/gaming/organizations/1374503911903/projects/%%PROJECT_ID%%/cloud-diagnostics/crashes-exceptions"
 UNITY_PROJECTS = {
     "coeurdegem_android": "bf023568-3ec6-4da9-a1f4-7895c17ec10e",
     "coeurdegem_ios": "bf023568-3ec6-4da9-a1f4-7895c17ec10e",
