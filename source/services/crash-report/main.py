@@ -78,8 +78,8 @@ def handler(event: dict, context: dict):
                     "rate_impacted_users": rate_impacted_users,
                     "rate_crash_free_sessions": rate_crash_free_sessions,
                 }
-                crashes_rates.append(crash_rate)
                 if not __crash_reported(application_name, app_version):
+                    crashes_rates.append(crash_rate)
                     __slack_message(slack_channel, slack_token, crash_rate)
 
     expires_timestamp = int(time()) + (60 * 60 * 24)  # 24 hours
