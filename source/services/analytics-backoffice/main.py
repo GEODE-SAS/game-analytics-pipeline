@@ -53,7 +53,9 @@ class FlaskApp(Flask):
             if response.status_code == 308:
                 adapter = app.url_map.bind(request.host)
                 # pylint: disable=unpacking-non-sequence
-                endpoint, _ = adapter.match(path_info=f"{request.path}/", method=request.method)
+                endpoint, _ = adapter.match(
+                    path_info=f"{request.path}/", method=request.method
+                )
                 endpoint_function = app.view_functions[endpoint]
                 return endpoint_function()
             return response

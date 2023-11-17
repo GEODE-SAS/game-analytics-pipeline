@@ -27,6 +27,7 @@ def handler(event: dict, context: dict):
 
     slack_channel, slack_token = __slack_secrets()
 
+    applications = {}
     crashes_rates: list[dict[str, Any]] = []
     query_IDs: dict[str, str] = {}
 
@@ -36,6 +37,7 @@ def handler(event: dict, context: dict):
     dynamodb_response = dynamodb.Table(constants.APPLICATIONS_TABLE).scan()
     for item in dynamodb_response["Items"]:
         application_name = item["application_name"]
+        applications[application_name] = item["application_id"]
         athena_response = athena.start_query_execution(
             QueryString=base_query.replace("%%APPLICATION_NAME%%", application_name),
             QueryExecutionContext={"Database": constants.ANALYTICS_DATABASE},
@@ -74,6 +76,7 @@ def handler(event: dict, context: dict):
                 app_version = row["Data"][app_version_index]["VarCharValue"]
                 crash_rate = {
                     "application_name": application_name,
+                    "application_id": applications[application_name],
                     "app_version": app_version,
                     "rate_impacted_users": rate_impacted_users,
                     "rate_crash_free_sessions": rate_crash_free_sessions,
@@ -111,7 +114,7 @@ def __slack_secrets() -> tuple[str, str]:
 def __slack_message(channel: str, token: str, crash_rate: dict[str, Any]):
     application_name = crash_rate["application_name"]
     app_version = crash_rate["app_version"]
-    bundle_ID = ".".join(application_name.split(".")[1:])
+    bundle_ID = ".".join(crash_rate["application_id"].split(".")[1:])
     is_china = "cn" in constants.REGION_NAME
 
     base_url = constants.UNITY_CRASH_URL.replace(

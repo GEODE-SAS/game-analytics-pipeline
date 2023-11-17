@@ -16,6 +16,23 @@
 #
 #  - version-code: version of the package
 
+build_python_lambda() {
+    rm -r dist 2>/dev/null
+    rsync -av --exclude=.venv/ --exclude=.vscode --exclude=.pylintrc --exclude=local_requirements.txt * dist >/dev/null
+    cd dist
+
+    python3.11 -m venv .venv --upgrade-deps
+    source .venv/bin/activate
+    pip install -r requirements.txt --target . >/dev/null
+    deactivate
+    rm -r .venv
+    rm -r requirements.txt
+
+    zip -r $1.zip . >/dev/null
+    cp $1.zip $build_dist_dir/$1.zip
+    cd -
+}
+
 # Check to see if input has been provided:
 if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
     echo "Please provide the base source bucket name, trademark approved solution name and version where the lambda code will eventually reside."
@@ -88,48 +105,6 @@ npm run build
 cp dist/admin.zip $build_dist_dir/admin.zip
 
 echo "------------------------------------------------------------------------------"  
-echo "Packaging Lambda Function - Remote Configs service"  
-echo "------------------------------------------------------------------------------"  
-cd $source_dir/services/api/remote-configs
-rm -r dist 2>/dev/null
-rsync -av --exclude=.venv/ --exclude=.pylintrc * dist >/dev/null
-cd dist
-python3.11 -m venv .venv --upgrade-deps
-source .venv/bin/activate
-pip install -r requirements.txt --target . >/dev/null
-zip -r remote-configs.zip . >/dev/null
-cp remote-configs.zip $build_dist_dir/remote-configs.zip
-deactivate
-
-echo "------------------------------------------------------------------------------"  
-echo "Packaging Lambda Function - Users Audiences service"  
-echo "------------------------------------------------------------------------------"  
-cd $source_dir/services/users-audiences
-rm -r dist 2>/dev/null
-rsync -av --exclude=.venv/ --exclude=.pylintrc * dist >/dev/null
-cd dist
-python3.11 -m venv .venv --upgrade-deps
-source .venv/bin/activate
-pip install -r requirements.txt --target . >/dev/null
-zip -r users-audiences.zip . >/dev/null
-cp users-audiences.zip $build_dist_dir/users-audiences.zip
-deactivate
-
-echo "------------------------------------------------------------------------------"  
-echo "Packaging Lambda Function - Crash Report service"  
-echo "------------------------------------------------------------------------------"  
-cd $source_dir/services/crash-report
-rm -r dist 2>/dev/null
-rsync -av --exclude=.venv/ --exclude=.pylintrc * dist >/dev/null
-cd dist
-python3.11 -m venv .venv --upgrade-deps
-source .venv/bin/activate
-pip install -r requirements.txt --target . >/dev/null
-zip -r crash-report.zip . >/dev/null
-cp crash-report.zip $build_dist_dir/crash-report.zip
-deactivate
-
-echo "------------------------------------------------------------------------------"  
 echo "Packaging Lambda Function - Lambda Authorizer"  
 echo "------------------------------------------------------------------------------"  
 cd $source_dir/services/api/lambda-authorizer
@@ -161,6 +136,24 @@ echo "Package AWS SAM template into CloudFormation"
 echo "------------------------------------------------------------------------------"
 cd $template_dist_dir
 aws cloudformation package --template-file ./game-analytics-pipeline.template --s3-bucket $1 --output-template-file ../global-s3-assets/game-analytics-pipeline.template
+
+echo "------------------------------------------------------------------------------"  
+echo "Packaging Lambda Function - Remote Configs service"  
+echo "------------------------------------------------------------------------------"  
+cd $source_dir/services/api/remote-configs
+build_python_lambda "remote-configs"
+
+echo "------------------------------------------------------------------------------"  
+echo "Packaging Lambda Function - Users Audiences service"  
+echo "------------------------------------------------------------------------------"  
+cd $source_dir/services/users-audiences
+build_python_lambda "users-audiences"
+
+echo "------------------------------------------------------------------------------"  
+echo "Packaging Lambda Function - Crash Report service"  
+echo "------------------------------------------------------------------------------"  
+cd $source_dir/services/crash-report
+build_python_lambda "crash-report"
 
 echo "------------------------------------------------------------------------------"  
 echo "Completed building distribution"
