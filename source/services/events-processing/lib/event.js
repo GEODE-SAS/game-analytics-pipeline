@@ -118,6 +118,10 @@ class Event {
           });
         }
 
+        if (event.event_name == "session_start") {
+          await _self.setUserAppState(event, applicationId)
+        }
+
         if(event.hasOwnProperty('event_id')){
           transformed_event.event_id = String(event.event_id);
         }
@@ -343,6 +347,34 @@ class Event {
     } else {
       // if in cache, return it
       return Promise.resolve(currencyCacheResult);
+    }
+  }
+
+  /**
+   * Set User App State in DynamoDB.
+   */
+  async setUserAppState(event, applicationId) {
+    const params = {
+      TableName: process.env.USER_APP_STATES_TABLE,
+      Item: {
+        user_id: event.user.user_id,
+        application_id: applicationId,
+        app_info: JSON.stringify(event.app_info),
+        device: JSON.stringify(event.device),
+        game_time: event.game_time,
+        remote_config: JSON.stringify(event.remote_config),
+        user: JSON.stringify(event.user)
+      }
+    };
+
+    const docClient = new AWS.DynamoDB.DocumentClient(this.dynamoConfig);
+    try {
+      const data = await docClient.put(params).promise();
+      console.log(data)
+      return Promise.resolve()
+    } catch (err) {
+      console.log(JSON.stringify(err));
+      return Promise.reject(err);
     }
   }
 

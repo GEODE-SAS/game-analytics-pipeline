@@ -11,13 +11,17 @@ else
     export GEODE_ENVIRONMENT="sandbox"
 fi
 
-if [ -d ".venv" ]; then
-    source .venv/bin/activate
-else
+if [ ! -d .venv ]; then
     echo "Virtual environment creation processing...\n"
     python3.11 -m venv .venv --upgrade-deps
-    source .venv/bin/activate
-    pip install -r requirements.txt > /dev/null
+fi
+
+source .venv/bin/activate
+
+if ! cmp -s requirements.txt .venv/requirements.txt; then
+    echo "Updating local dependencies...\n"
+    pip install -r requirements.txt >/dev/null
+    cp requirements.txt .venv/requirements.txt
 fi
 
 python main.py
