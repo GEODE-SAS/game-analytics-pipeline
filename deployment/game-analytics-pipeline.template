@@ -166,6 +166,7 @@ Resources:
           APPLICATIONS_TABLE: !Ref ApplicationsTable
           EXCHANGE_RATES_TABLE: 'exchange-rates'
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          USER_APP_STATES_TABLE: !Ref UserAppStatesTable
           CACHE_TIMEOUT_SECONDS: 60
       Policies:
         Version: 2012-10-17
@@ -191,6 +192,7 @@ Resources:
             Resource:
               - !GetAtt ApplicationsTable.Arn
               - !GetAtt IdempotencyTable.Arn
+              - !GetAtt UserAppStatesTable.Arn
               - !Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/exchange-rates'
     Metadata:
       cfn_nag:
@@ -1900,6 +1902,24 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expires_timestamp
         Enabled: true
+
+  UserAppStatesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: true
+      TableName: !Sub '${AWS::StackName}-user-app-states'
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
 
   
   ####################
