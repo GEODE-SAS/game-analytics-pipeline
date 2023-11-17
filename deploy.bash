@@ -1,5 +1,5 @@
 PROJECT_NAME="geode-analytics"
-VERSION="v6"
+VERSION="v7"
 
 if [ -z $BRANCH_NAME ]; then
     # Jenkins runs script on git branch in a detached HEAD state.
