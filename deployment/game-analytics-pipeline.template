@@ -1530,7 +1530,7 @@ Resources:
       ExtendedS3DestinationConfiguration:
         BucketARN: !Sub 'arn:${AWS::Partition}:s3:::${AnalyticsBucket}'
         BufferingHints:
-          IntervalInSeconds: !If [ConfigureDevMode, 60, 900] 
+          IntervalInSeconds: !If [ConfigureDevMode, 10, 900] 
           SizeInMBs: 128
         DynamicPartitioningConfiguration:
           Enabled: true
