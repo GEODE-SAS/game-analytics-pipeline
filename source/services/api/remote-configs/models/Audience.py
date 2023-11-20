@@ -45,20 +45,12 @@ class Audience:
 
         audiences = []
         for item in response["Items"]:
-            condition_str = item["condition"]
-            if "&" in condition_str and "||" in condition_str:
-                raise ValueError("We NOT handle & AND || in the same condition")
-            if "||" in condition_str:
-                audience_match = Audience.__audience_match(
-                    user_data, condition_str.split("||"), "||"
-                )
-            else:
-                # If there is only one parameter or multiple AND parameter
-                audience_match = Audience.__audience_match(
-                    user_data, condition_str.split("&"), "&"
-                )
+            expression: str = item["condition"]
 
-            if audience_match:
+            for parameter_name, parameter_value in user_data.items():
+                expression = expression.replace(parameter_name, f"'{parameter_value}'")
+
+            if eval(expression) is True:  # pylint: disable=eval-used
                 audiences.append(Audience(item["audience_name"]))
 
         return audiences
@@ -69,16 +61,3 @@ class Audience:
         This property returns audience_name.
         """
         return self.__audience_name
-
-    @staticmethod
-    def __audience_match(
-        user_data: dict[str, Any], conditions: list[str], operator: str
-    ) -> bool:
-        for condition in conditions:
-            parameter, value = condition.split("=")
-            if user_data[parameter] != value and operator == "&":
-                return False
-            if user_data[parameter] == value and operator == "||":
-                return True
-
-        return operator == "&"
