@@ -118,10 +118,6 @@ class Event {
           });
         }
 
-        if (event.event_name == "session_start") {
-          await _self.setUserAppState(event, applicationId)
-        }
-
         if(event.hasOwnProperty('event_id')){
           transformed_event.event_id = String(event.event_id);
         }
@@ -162,7 +158,11 @@ class Event {
         }
         
         transformed_event.application_name = String(application.application_name);
-        
+
+        if (transformed_event.event_name == "session_start") {
+          await _self.setUserAppState(transformed_event, applicationId)
+        }
+
         return Promise.resolve({
           recordId: recordId,
           result: 'Ok',
