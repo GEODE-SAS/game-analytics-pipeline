@@ -27,10 +27,7 @@ class RemoteConfigOverride:
         """
         This method returns actived RemoteConfigOverride.
         """
-        audience_names = [audience.audience_name for audience in audiences]
-
-        if not audience_names:
-            return []
+        audience_names = [audience.audience_name for audience in audiences] + ["ALL"]
 
         response = dynamodb.Table(constants.REMOTE_CONFIGS_OVERRIDES_TABLE).query(
             IndexName="remote_config_name-active-index",

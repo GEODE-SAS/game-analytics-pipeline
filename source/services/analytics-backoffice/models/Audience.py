@@ -51,7 +51,7 @@ class Audience:
         response = database.Table(constants.TABLE_AUDIENCES).query(
             KeyConditionExpression=Key("audience_name").eq(audience_name)
         )
-        return len(response["Items"]) > 0
+        return len(response["Items"]) > 0 or audience_name == "ALL"
 
     @property
     def audience_name(self) -> str:
