@@ -141,7 +141,12 @@ class Event {
         }
         if(event.hasOwnProperty('user')){
           transformed_event.user = event.user;
-          transformed_event.user.country = String(country)
+          if (transformed_event.event_type != "server") {
+            // if event_type == "server", the country is already retrieved in the user app state
+            // server events are sent by our servers which are based in the US,
+            // so the country will always be equal to US
+            transformed_event.user.country = String(country)
+          }
         }
         if(event.hasOwnProperty('device')){
           transformed_event.device = event.device;

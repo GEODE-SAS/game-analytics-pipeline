@@ -142,7 +142,8 @@ def __slack_message(channel: str, token: str, crash_rate: dict[str, Any]):
                 }
             ],
             "channel": channel,
-            "username": "Crash Report",
+            "icon_emoji": ":hugofirefighter:",
+            "username": "Hugo le pompier",
         },
         timeout=60,
     )
