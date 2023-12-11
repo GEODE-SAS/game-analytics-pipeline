@@ -157,21 +157,6 @@ paths:
                 type: array
                 items:
                   type: object
-                  properties:
-                    abtest_name:
-                      type: string
-                      example: LightColors
-                    target_user_percent:
-                      type: integer
-                      example: 100
-                    variants:
-                      type: array
-                      item:
-                        type: string
-                      example:
-                      - Blue
-                      - Yellow
-
   /abtests/{abtest_name}:
     post:
       summary: Set ABTest
@@ -302,21 +287,6 @@ paths:
                 type: array
                 items:
                   type: object
-                  properties:
-                    audience_name:
-                      type: string
-                      example: ONLY_FR
-                    condition:
-                      type: string
-                      example: json_extract_scalar(user, '$.country')='FR'
-                    description:
-                      type: string
-                      example: This Audience targets only French players
-                    type:
-                      type: string
-                      enum:
-                      - event_based
-                      - property_based
   /audiences/{audience_name}:
     post:
       summary: Set Audience
@@ -397,53 +367,13 @@ paths:
       - Remote Configs
       responses:
         200:
-          description: |-
-            Remote Configs returned successfully.
-
-            - `start_timestamp` of override is optional, it is only present if the `active` == true
+          description: Remote Configs returned successfully.
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: object
-                  properties:
-                    applications:
-                      type: array
-                      items:
-                        type: string
-                      example:
-                      - ios.com.geode.dazzly
-                      - android.com.geode.dazzly
-                    description:
-                      type: string
-                      example: This Remote Config allows to handle color button.
-                    overrides:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          active:
-                            type: boolean
-                          audience_name:
-                            type: string
-                            example: ONLY_FR
-                          override_type:
-                            type: string
-                            example: abtest
-                          override_value:
-                            type: string
-                            example: LightColors
-                          start_timestamp:
-                            type: integer
-                            example: 1700822805
-                    reference_value:
-                      type: string
-                      example: Blue
-                    remote_config_name:
-                      type: string
-                      example: ColorButton
-
   /remote-configs/{remote_config_name}:
     post:
       summary: Set Remote Config

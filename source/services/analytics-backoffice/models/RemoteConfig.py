@@ -5,7 +5,6 @@ from typing import Any, List
 
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
-from models.RemoteConfigOverride import RemoteConfigOverride
 from utils import constants
 
 
@@ -37,18 +36,7 @@ class RemoteConfig:
         This static method returns all remote configs.
         """
         response = database.Table(constants.TABLE_REMOTE_CONFIGS).scan()
-        return [
-            RemoteConfig(
-                database,
-                item
-                | {
-                    "overrides": RemoteConfigOverride.from_remote_config_name(
-                        database, item["remote_config_name"]
-                    )
-                },
-            )
-            for item in response["Items"]
-        ]
+        return [RemoteConfig(database, item) for item in response["Items"]]
 
     @staticmethod
     def exists(database: DynamoDBServiceResource, remote_config_name: str) -> bool:

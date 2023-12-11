@@ -78,19 +78,6 @@ class RemoteConfigOverride:
         )
         return [RemoteConfigOverride(database, item) for item in response["Items"]]
 
-    @staticmethod
-    def from_remote_config_name(
-        database: DynamoDBServiceResource, remote_config_name: str
-    ) -> List["RemoteConfigOverride"]:
-        """
-        This method returns a list of RemoteConfigOverride that have <remote_config_name>.
-        """
-        response = database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).query(
-            IndexName="remote_config_name-index",
-            KeyConditionExpression=Key("remote_config_name").eq(remote_config_name),
-        )
-        return [RemoteConfigOverride(database, item) for item in response["Items"]]
-
     @property
     def activated(self) -> bool:
         """
@@ -230,12 +217,6 @@ class RemoteConfigOverride:
 
         override_data = override.to_dict() | {"promoted_value": new_value}
         self.fill_history(override_data=override_data)
-
-    def to_dict(self) -> dict[str, Any]:
-        """
-        This method returns a dict that represents the RemoteConfigOverride.
-        """
-        return self.__data | {"active": self.activated}
 
     def update_database(self):
         """

@@ -1768,6 +1768,14 @@ Resources:
         - AttributeName: audience_name
           KeyType: RANGE
       GlobalSecondaryIndexes:
+        - IndexName: remote_config_name-active-index
+          KeySchema:
+            - AttributeName: remote_config_name
+              KeyType: HASH
+            - AttributeName: active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
         - IndexName: audience_name-index
           KeySchema:
             - AttributeName: audience_name
@@ -1778,20 +1786,6 @@ Resources:
           KeySchema:
             - AttributeName: override_type
               KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: remote_config_name-index
-          KeySchema:
-            - AttributeName: remote_config_name
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: remote_config_name-active-index
-          KeySchema:
-            - AttributeName: remote_config_name
-              KeyType: HASH
-            - AttributeName: active
-              KeyType: RANGE
           Projection:
             ProjectionType: ALL
       PointInTimeRecoverySpecification:
