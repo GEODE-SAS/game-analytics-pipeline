@@ -44,8 +44,8 @@ class FlaskApp(Flask):
         self.json_provider_class = FlaskAppEncoder
         self.json = FlaskAppEncoder(self)
 
-        self.config["athena"] = boto3.client("athena")
-        self.config["database"] = boto3.resource("dynamodb")
+        self.config["athena"] = session.client("athena")
+        self.config["database"] = session.resource("dynamodb")
 
         @self.after_request
         def after_request(response: wrappers.Response):
@@ -68,6 +68,7 @@ class FlaskApp(Flask):
             return jsonify(), 204
 
 
+session = boto3.session.Session(profile_name="dev" if __name__ == "__main__" else None)
 app = FlaskApp(__name__)
 app.register_blueprint(abtests_endpoints, url_prefix="/abtests")
 app.register_blueprint(applications_endpoints, url_prefix="/applications")

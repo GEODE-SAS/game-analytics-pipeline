@@ -38,9 +38,7 @@ class Audience:
         """
         This static method returns all audiences.
         """
-        response = database.Table(constants.TABLE_AUDIENCES).query(
-            IndexName="type-index", KeyConditionExpression=Key("type").eq("event_based")
-        )
+        response = database.Table(constants.TABLE_AUDIENCES).scan()
         return [Audience(database, item) for item in response["Items"]]
 
     @staticmethod

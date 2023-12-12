@@ -1768,6 +1768,12 @@ Resources:
         - AttributeName: audience_name
           KeyType: RANGE
       GlobalSecondaryIndexes:
+        - IndexName: remote_config_name-index
+          KeySchema:
+            - AttributeName: remote_config_name
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
         - IndexName: remote_config_name-active-index
           KeySchema:
             - AttributeName: remote_config_name
