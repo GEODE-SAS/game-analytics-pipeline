@@ -19,7 +19,7 @@ def get_remote_configs():
     """
     This endpoint returns all remote configs.
     """
-    return jsonify(remote_configs=RemoteConfig.get_all(current_app.config["database"]))
+    return jsonify(RemoteConfig.get_all(current_app.config["database"]))
 
 
 @remote_configs_endpoints.post("/<remote_config_name>")
