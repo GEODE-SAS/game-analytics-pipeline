@@ -4,10 +4,13 @@ BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
 export PROJECT_NAME="geode-analytics"
 
 if [ $BRANCH_NAME = "master" ]; then
+    export AWS_PROFILE_NAME="prod"
     export GEODE_ENVIRONMENT="prod"
 elif [ $BRANCH_NAME = "dev" ]; then
+    export AWS_PROFILE_NAME="dev"
     export GEODE_ENVIRONMENT="dev"
 else
+    export AWS_PROFILE_NAME="sandbox"
     export GEODE_ENVIRONMENT="sandbox"
 fi
 

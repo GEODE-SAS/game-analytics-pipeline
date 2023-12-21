@@ -45,6 +45,16 @@ class Application:
             return cls(athena, item.pop("application_id"), item)
 
     @staticmethod
+    def exists(database: DynamoDBServiceResource, application_ID: str) -> bool:
+        """
+        This property returns True if Application exists, else False.
+        """
+        response = database.Table(constants.TABLE_APPLICATIONS).get_item(
+            Key={"application_id": application_ID}
+        )
+        return "Item" in response
+
+    @staticmethod
     def get_all(
         database: DynamoDBServiceResource, athena: AthenaClient
     ) -> List["Application"]:

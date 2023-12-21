@@ -65,5 +65,5 @@ def delete_audience(audience_name: str):
             400,
         )
 
-    audience.delete()
+    audience.soft_delete()
     return jsonify(), 204

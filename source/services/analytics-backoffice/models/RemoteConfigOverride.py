@@ -1,14 +1,13 @@
 """
 This module contains RemoteConfigOverride class.
 """
-from time import time
 from typing import Any, List
-from uuid import uuid4
 
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Key
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from models.ABTest import ABTest
+from models.Audience import Audience
 from utils import constants
 
 
@@ -24,47 +23,6 @@ class RemoteConfigOverride:
         self.__assert_data(data)
         self.__data = data
 
-    @classmethod
-    def from_database(
-        cls,
-        database: DynamoDBServiceResource,
-        remote_config_name: str,
-        audience_name: str,
-    ):
-        """
-        This method creates an instance of RemoteConfigOverride by fetching database.
-        """
-        response = database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).get_item(
-            Key={
-                "remote_config_name": remote_config_name,
-                "audience_name": audience_name,
-            }
-        )
-        if item := response.get("Item"):
-            return cls(database, item)
-
-    @staticmethod
-    def from_abtest_name(
-        database: DynamoDBServiceResource,
-        abtest_name: str,
-        exclude: "RemoteConfigOverride | None" = None,
-    ) -> List["RemoteConfigOverride"]:
-        """
-        This method returns a list of RemoteConfigOverride that have <abtest_name>.
-        """
-        response = database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).query(
-            IndexName="override_type-index",
-            KeyConditionExpression=Key("override_type").eq("abtest"),
-            FilterExpression=Attr("override_value").eq(abtest_name),
-        )
-        return [
-            item
-            for item in response["Items"]
-            if exclude is None
-            or exclude.remote_config_name != item["remote_config_name"]
-            or exclude.audience_name != item["audience_name"]
-        ]
-
     @staticmethod
     def from_audience_name(
         database: DynamoDBServiceResource, audience_name: str
@@ -76,44 +34,56 @@ class RemoteConfigOverride:
             IndexName="audience_name-index",
             KeyConditionExpression=Key("audience_name").eq(audience_name),
         )
-        return [RemoteConfigOverride(database, item) for item in response["Items"]]
+        return [
+            RemoteConfigOverride(
+                database, item | {"activated": item.pop("active") == 1}
+            )
+            for item in response["Items"]
+        ]
 
     @staticmethod
     def from_remote_config_name(
         database: DynamoDBServiceResource, remote_config_name: str
-    ) -> List["RemoteConfigOverride"]:
+    ) -> dict[str, "RemoteConfigOverride"]:
         """
-        This method returns a list of RemoteConfigOverride that have <remote_config_name>.
+        This method returns a dict of RemoteConfigOverride that have <remote_config_name>.
         """
         response = database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).query(
             IndexName="remote_config_name-index",
             KeyConditionExpression=Key("remote_config_name").eq(remote_config_name),
         )
-        return [RemoteConfigOverride(database, item) for item in response["Items"]]
+        return {
+            item["audience_name"]: RemoteConfigOverride(
+                database, item | {"activated": item.pop("active") == 1}
+            )
+            for item in response["Items"]
+        }
+
+    @staticmethod
+    def purge(database: DynamoDBServiceResource, remote_config_name: str):
+        """
+        This method purges all overrides from remote_config_name.
+        """
+        overrides = RemoteConfigOverride.from_remote_config_name(
+            database, remote_config_name
+        )
+        table = database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES)
+
+        with table.batch_writer() as batch_writer:
+            for override in overrides.values():
+                batch_writer.delete_item(
+                    Key={
+                        "remote_config_name": remote_config_name,
+                        "audience_name": override.audience_name,
+                    }
+                )
 
     @property
     def activated(self) -> bool:
         """
         This property returns True if RemoteConfigOverride is activated else False.
         """
-        return self.active == 1
-
-    @property
-    def active(self) -> int:
-        """
-        This property returns 1 if RemoteConfigOverride is activated else 0.
-        """
-        if "active" not in self.__data:
-            response = self.__database.Table(
-                constants.TABLE_REMOTE_CONFIGS_OVERRIDES
-            ).get_item(
-                Key={
-                    "remote_config_name": self.remote_config_name,
-                    "audience_name": self.audience_name,
-                }
-            )
-            self.__data["active"] = response.get("Item", {}).get("active", 0)
-        return self.__data["active"]
+        return self.__data["activated"]
 
     @property
     def audience_name(self) -> str:
@@ -143,99 +113,11 @@ class RemoteConfigOverride:
         """
         return self.__data["remote_config_name"]
 
-    @property
-    def start_timestamp(self) -> int:
-        """
-        This property returns start_timestamp.
-        """
-        return self.__data["start_timestamp"]
-
-    def activate(self, activated: bool):
-        """
-        This method activates/deactivates RemoteConfigOverride.
-        """
-        if activated:
-            attribute_updates = {
-                "active": {"Value": 1, "Action": "PUT"},
-                "start_timestamp": {"Value": int(time()), "Action": "PUT"},
-            }
-        else:
-            attribute_updates = {
-                "active": {"Value": 0, "Action": "PUT"},
-                "start_timestamp": {"Action": "DELETE"},
-            }
-            self.fill_history({"override_value": self.override_value})
-
-        self.__database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).update_item(
-            Key={
-                "remote_config_name": self.remote_config_name,
-                "audience_name": self.audience_name,
-            },
-            AttributeUpdates=attribute_updates,
-        )
-
-    def delete(self):
-        """
-        This method deletes RemoteConfigOverride from database.
-        """
-        self.__database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).delete_item(
-            Key={
-                "remote_config_name": self.remote_config_name,
-                "audience_name": self.audience_name,
-            }
-        )
-
-    def fill_history(self, override_data: dict[str, Any]):
-        """
-        This method fills remote config overrides history.
-        """
-        self.__database.Table(
-            constants.TABLE_REMOTE_CONFIGS_OVERRIDES_HISTORY
-        ).put_item(
-            Item={
-                "ID": str(uuid4()),
-                "type": self.override_type,
-                "remote_config_name": self.remote_config_name,
-                "audience_name": self.audience_name,
-                "start_timestamp": self.start_timestamp,
-                "end_timestamp": int(time()),
-                "override_data": override_data,
-            }
-        )
-
-    def fix_value(self, new_value: str, override: ABTest):
-        """
-        This method fix value.
-        """
-        if self.audience_name == "ALL":
-            self.__database.Table(constants.TABLE_REMOTE_CONFIGS).update_item(
-                Key={"remote_config_name": self.remote_config_name},
-                AttributeUpdates={
-                    "reference_value": {"Value": new_value, "Action": "PUT"},
-                },
-            )
-            self.delete()
-        else:
-            self.__database.Table(constants.TABLE_REMOTE_CONFIGS_OVERRIDES).update_item(
-                Key={
-                    "remote_config_name": self.remote_config_name,
-                    "audience_name": self.audience_name,
-                },
-                AttributeUpdates={
-                    "override_type": {"Value": "fixed", "Action": "PUT"},
-                    "override_value": {"Value": new_value, "Action": "PUT"},
-                    "start_timestamp": {"Value": int(time()), "Action": "PUT"},
-                },
-            )
-
-        override_data = override.to_dict() | {"promoted_value": new_value}
-        self.fill_history(override_data=override_data)
-
     def to_dict(self) -> dict[str, Any]:
         """
         This method returns a dict that represents the RemoteConfigOverride.
         """
-        return self.__data | {"active": self.activated}
+        return self.__data
 
     def update_database(self):
         """
@@ -245,27 +127,44 @@ class RemoteConfigOverride:
             Item={
                 "remote_config_name": self.remote_config_name,
                 "audience_name": self.audience_name,
-                "active": self.active,
+                "active": 1 if self.activated else 0,
                 "override_type": self.override_type,
                 "override_value": self.override_value,
             }
         )
 
     def __assert_data(self, data: dict[str, Any]):
-        audience_name = data["audience_name"]
-        override_type = data["override_type"]
-        override_value = data["override_value"]
-        remote_config_name = data["remote_config_name"]
+        data = data.copy()
+        activated = data.pop("activated")
+        audience_name = data.pop("audience_name")
+        override_type = data.pop("override_type")
+        override_value = data.pop("override_value")
+        remote_config_name = data.pop("remote_config_name")
 
-        assert audience_name and isinstance(
-            audience_name, str
+        audience = Audience.from_database(self.__database, audience_name)
+
+        assert isinstance(activated, bool), "`activated` should be bool"
+        assert (
+            isinstance(audience_name, str) and audience_name != ""
         ), "`audience_name` should be a non-empty string"
+        assert (
+            audience_name == "ALL" or audience and not audience.deleted
+        ), f"`audience_name` {audience_name} not exists"
         assert (
             override_type in self.__override_types
         ), f"`override_type` should be in : {self.__override_types}"
-        assert (
-            isinstance(override_value, str) and override_type != ""
-        ), "`override_value` should be non-empty string"
+
+        if override_type == "abtest":
+            assert isinstance(override_value, dict), "`override_value` should be dict"
+            ABTest(override_value)
+        else:
+            # override_type == "fixed"
+            assert (
+                isinstance(override_value, str) and override_type != ""
+            ), "`override_value` should be non-empty string"
+
         assert remote_config_name and isinstance(
             audience_name, str
         ), "`remote_config_name` should be a non-empty string"
+
+        assert len(data) == 0, f"Unexpected fields -> {data.keys()}"

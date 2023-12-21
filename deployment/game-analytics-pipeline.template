@@ -227,7 +227,6 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          ABTESTS_TABLE: !Ref ABTestsTable
           AUDIENCES_TABLE: !Ref AudiencesTable
           REMOTE_CONFIGS_TABLE: !Ref RemoteConfigsTable
           REMOTE_CONFIGS_OVERRIDES_TABLE: !Ref RemoteConfigsOverridesTable
@@ -256,8 +255,6 @@ Resources:
               - dynamodb:Query
               - dynamodb:Scan
             Resource:
-              - !GetAtt ABTestsTable.Arn
-              - !Sub ${ABTestsTable.Arn}/index/*
               - !GetAtt RemoteConfigsTable.Arn
               - !Sub ${RemoteConfigsTable.Arn}/index/*
               - !GetAtt AudiencesTable.Arn
@@ -1711,6 +1708,8 @@ Resources:
       AttributeDefinitions:
         - AttributeName: audience_name
           AttributeType: S
+        - AttributeName: deleted
+          AttributeType: N
         - AttributeName: type
           AttributeType: S
       KeySchema:
@@ -1723,24 +1722,12 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-
-  ABTestsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      DeletionProtectionEnabled: true
-      TableName: !Sub '${AWS::StackName}-abtests'
-      AttributeDefinitions:
-        - AttributeName: abtest_name
-          AttributeType: S
-      KeySchema:
-        - AttributeName: abtest_name
-          KeyType: HASH
+        - IndexName: deleted-index
+          KeySchema:
+            - AttributeName: deleted
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -1757,8 +1744,6 @@ Resources:
         - AttributeName: remote_config_name
           AttributeType: S
         - AttributeName: audience_name
-          AttributeType: S
-        - AttributeName: override_type
           AttributeType: S
         - AttributeName: active
           AttributeType: N
@@ -1785,12 +1770,6 @@ Resources:
         - IndexName: audience_name-index
           KeySchema:
             - AttributeName: audience_name
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: override_type-index
-          KeySchema:
-            - AttributeName: override_type
               KeyType: HASH
           Projection:
             ProjectionType: ALL

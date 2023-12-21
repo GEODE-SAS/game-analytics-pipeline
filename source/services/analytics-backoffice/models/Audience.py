@@ -17,8 +17,8 @@ class Audience:
     __types = ("event_based", "property_based")
 
     def __init__(self, database: DynamoDBServiceResource, data: dict[str, Any]):
-        self.__assert_data(data)
         self.__database = database
+        self.__assert_data(data)
         self.__data = data
 
     @classmethod
@@ -38,18 +38,10 @@ class Audience:
         """
         This static method returns all audiences.
         """
-        response = database.Table(constants.TABLE_AUDIENCES).scan()
-        return [Audience(database, item) for item in response["Items"]]
-
-    @staticmethod
-    def exists(database: DynamoDBServiceResource, audience_name: str) -> bool:
-        """
-        This property returns True if Audience exists, else False.
-        """
         response = database.Table(constants.TABLE_AUDIENCES).query(
-            KeyConditionExpression=Key("audience_name").eq(audience_name)
+            IndexName="deleted-index", KeyConditionExpression=Key("deleted").eq(0)
         )
-        return len(response["Items"]) > 0 or audience_name == "ALL"
+        return [Audience(database, item) for item in response["Items"]]
 
     @property
     def audience_name(self) -> str:
@@ -66,6 +58,13 @@ class Audience:
         return self.__data["condition"]
 
     @property
+    def deleted(self) -> bool:
+        """
+        This method returns True if Audience is soft deleted, else False.
+        """
+        return self.__data["deleted"]
+
+    @property
     def description(self) -> str:
         """
         This method returns description.
@@ -79,12 +78,15 @@ class Audience:
         """
         return self.__data["type"]
 
-    def delete(self):
+    def soft_delete(self):
         """
-        This method deletes audience from database.
+        This method soft deletes audience from database.
         """
-        self.__database.Table(constants.TABLE_AUDIENCES).delete_item(
-            Key={"audience_name": self.audience_name}
+        self.__database.Table(constants.TABLE_AUDIENCES).update_item(
+            Key={"audience_name": self.audience_name},
+            AttributeUpdates={
+                "deleted": {"Value": 1, "Action": "PUT"},
+            },
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -101,16 +103,19 @@ class Audience:
             Item={
                 "audience_name": self.audience_name,
                 "condition": self.condition,
+                "deleted": 0,
                 "description": self.description,
                 "type": self.type,
             }
         )
 
     def __assert_data(self, data: dict[str, Any]):
-        audience_name = data["audience_name"]
-        condition = data["condition"]
-        description = data["description"]
-        audience_type = data["type"]
+        data = data.copy()
+        data.pop("deleted", None)
+        audience_name = data.pop("audience_name")
+        condition = data.pop("condition")
+        description = data.pop("description")
+        audience_type = data.pop("type")
 
         assert (
             isinstance(audience_name, str) and audience_name != ""
@@ -120,3 +125,5 @@ class Audience:
         ), "`condition_value` should be non-empty string"
         assert isinstance(description, str), "`description` should be string"
         assert audience_type in self.__types, f"`type` should be in {self.__types}"
+
+        assert len(data) == 0, f"Unexpected fields -> {data.keys()}"
