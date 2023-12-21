@@ -11,8 +11,6 @@ servers:
 tags:
 - name: Applications
   description: Handle GEODE Analytics Applications
-- name: ABTests
-  description: Handle GEODE ABTests
 - name: Audiences
   description: Handle GEODE Audiences
 - name: Remote Configs
@@ -140,151 +138,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/errorResponse'
 
-  #  ----- ABTests ----------------------------------
-
-  /abtests:
-    get:
-      summary: Get all ABTests
-      description: This endpoint returns all ABTests.
-      tags:
-      - ABTests
-      responses:
-        200:
-          description: ABTests returned successfully.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    abtest_name:
-                      type: string
-                      example: LightColors
-                    target_user_percent:
-                      type: integer
-                      example: 100
-                    variants:
-                      type: array
-                      item:
-                        type: string
-                      example:
-                      - Blue
-                      - Yellow
-
-  /abtests/{abtest_name}:
-    post:
-      summary: Set ABTest
-      description: This endpoint sets ABTest.
-      tags:
-      - ABTests
-      parameters:
-      - name: abtest_name
-        in: path
-        description: name of the ABTest
-        required: true
-        schema:
-          type: string
-          example: LightColors
-      requestBody:
-        description: |-
-          - `abtest_name` is the unique ABTest identifier.
-          - `target_user_percent` must be between 0 and 100.
-        required: true
-        content:
-          application/json:
-            schema:
-              required:
-              - target_user_percent
-              - variants
-              type: object
-              properties:
-                target_user_percent:
-                  type: integer
-                  example: 100
-                variants:
-                  type: array
-                  item:
-                    type: string
-                  example:
-                  - Blue
-                  - Yellow
-      responses:
-        204:
-          description: The ABTest was created/updated successfully.
-        400:
-          description: The ABTest has NOT been created/updated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponse'
-    delete:
-      summary: Delete ABTest
-      description: This endpoint deletes ABTest. You can't delete ABTest link with Remote Config Override.
-      tags:
-      - ABTests
-      parameters:
-      - name: abtest_name
-        in: path
-        description: name of the ABTest
-        required: true
-        schema:
-          type: string
-          example: LightColors
-      responses:
-        204:
-          description: The ABTest was deleted successfully.
-        400:
-          description: The ABTest has NOT been deleted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponse'
-  /abtests/{abtest_name}/promote:
-    post:
-      summary: Promote ABTest
-      description: This endpoint promotes ABTest. It promotes value to Remote Config Override Audience. If Audience is ALL, it replaces reference_value of Remote Config.
-      tags:
-      - ABTests
-      parameters:
-      - name: abtest_name
-        in: path
-        description: name of the ABTest
-        required: true
-        schema:
-          type: string
-          example: LightColors
-      requestBody:
-        description: |-
-          - `promoted_value` should be reference_value of Remote Config or a variant of ABTest.
-        required: true
-        content:
-          application/json:
-            schema:
-              required:
-              - remote_config_name
-              - audience_name
-              - promoted_value
-              type: object
-              properties:
-                remote_config_name:
-                  type: string
-                  example: ColorButton
-                audience_name:
-                  type: string
-                  example: ONLY_FR
-                promoted_value:
-                  type: string
-                  example: Blue
-      responses:
-        204:
-          description: The ABTest was promoted successfully.
-        400:
-          description: The ABTest has NOT been promoted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponse'
   #  ----- Audience ----------------------------------
 
   /audiences:
@@ -366,7 +219,7 @@ paths:
                 $ref: '#/components/schemas/errorResponse'
     delete:
       summary: Delete Audience
-      description: This endpoint deletes Audience.
+      description: This endpoint deletes Audience (soft delete).
       tags:
       - Audiences
       parameters:
@@ -399,50 +252,36 @@ paths:
         200:
           description: |-
             Remote Configs returned successfully.
-
-            - `start_timestamp` of override is optional, it is only present if the `active` == true
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    applications:
-                      type: array
-                      items:
-                        type: string
-                      example:
-                      - ios.com.geode.dazzly
-                      - android.com.geode.dazzly
-                    description:
+                type: object
+                properties:
+                  applications:
+                    type: array
+                    items:
                       type: string
-                      example: This Remote Config allows to handle color button.
-                    overrides:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          active:
-                            type: boolean
-                          audience_name:
-                            type: string
-                            example: ONLY_FR
-                          override_type:
-                            type: string
-                            example: abtest
-                          override_value:
-                            type: string
-                            example: LightColors
-                          start_timestamp:
-                            type: integer
-                            example: 1700822805
-                    reference_value:
-                      type: string
-                      example: Blue
-                    remote_config_name:
-                      type: string
-                      example: ColorButton
+                    example:
+                    - android.com.geode.dazzly
+                    - ios.com.geode.dazzly
+                  description:
+                    type: string
+                    example: This Remote Config allows to handle color button.
+                  overrides:
+                    type: object
+                    properties:
+                      ALL:
+                        oneOf:
+                        - $ref: '#/components/schemas/RemoteConfigOverride'
+                      ONLY_FR:
+                        oneOf:
+                        - $ref: '#/components/schemas/RemoteConfigOverride'
+                  reference_value:
+                    type: string
+                    example: Blue
+                  remote_config_name:
+                    type: string
+                    example: ColorButton
 
   /remote-configs/{remote_config_name}:
     post:
@@ -461,6 +300,10 @@ paths:
       requestBody:
         description: |-
           - `remote_config_name` is the unique Remote Config identifier.
+
+          - key of `overrides` should be existing audience_name.
+
+          - `override_value` should be string if `override_type` == `fixed` and object if `override_type` == `abtest`.
         required: true
         content:
           application/json:
@@ -468,6 +311,7 @@ paths:
               required:
               - applications
               - description
+              - overrides
               - reference_value
               type: object
               properties:
@@ -476,11 +320,20 @@ paths:
                   items:
                     type: string
                   example:
-                  - ios.com.geode.dazzly
                   - android.com.geode.dazzly
+                  - ios.com.geode.dazzly
                 description:
                   type: string
                   example: This Remote Config allows to handle color button.
+                overrides:
+                  type: object
+                  properties:
+                    ALL:
+                      oneOf:
+                      - $ref: '#/components/schemas/RemoteConfigOverride'
+                    ONLY_FR:
+                      oneOf:
+                      - $ref: '#/components/schemas/RemoteConfigOverride'
                 reference_value:
                   type: string
                   example: Blue
@@ -492,137 +345,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/errorResponse'
-
-  /remote-configs/{remote_config_name}/override/{audience_name}:
-    post:
-      summary: Set Remote Config Override
-      description: This endpoint sets Override for a Remote Config based on an Audience. If user matches all Audience conditions, it will retrieve override_value instead of reference_value, ONLY if override_type == fixed. If override_type == abtest, override_value should be abtest_name.
-      tags:
-      - Remote Configs
-      parameters:
-      - name: remote_config_name
-        in: path
-        description: name of the Remote Config
-        required: true
-        schema:
-          type: string
-          example: ColorButton
-      - name: audience_name
-        in: path
-        description: name of the Audience
-        required: true
-        schema:
-          type: string
-          example: ONLY_FR
-      requestBody:
-        description: |-
-          - You can't update activated Remote Config Override
-          - You can't link ABTest to multiple Remote Config Override
-        required: true
-        content:
-          application/json:
-            schema:
-              required:
-              - override_type
-              - override_value
-              type: object
-              properties:
-                override_type:
-                  type: string
-                  enum:
-                  - abtest
-                  - fixed
-                override_value:
-                  type: string
-                  example: LightColors
-      responses:
-        204:
-          description: The Remote Config Override was created/updated successfully.
-        400:
-          description: The Remote Config Override has NOT been created/updated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponse'
-    delete:
-      summary: Delete Remote Config Override
-      description: This endpoint deletes Override for a Remote Config based on an Audience. You can't delete activated Remote Config Override.
-      tags:
-      - Remote Configs
-      parameters:
-      - name: remote_config_name
-        in: path
-        description: name of the Remote Config
-        required: true
-        schema:
-          type: string
-          example: ColorButton
-      - name: audience_name
-        in: path
-        description: name of the Audience
-        required: true
-        schema:
-          type: string
-          example: ONLY_FR
-      responses:
-        204:
-          description: The Remote Config Override was deleted successfully.
-        400:
-          description: The Remote Config Override has NOT been deleted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponse'
-
-  /remote-configs/{remote_config_name}/override/{audience_name}/activate:
-    post:
-      summary: Activate Remote Config Override
-      description: This endpoint activates Override for a Remote Config based on an Audience.
-      tags:
-      - Remote Configs
-      parameters:
-      - name: remote_config_name
-        in: path
-        description: name of the Remote Config
-        required: true
-        schema:
-          type: string
-          example: ColorButton
-      - name: audience_name
-        in: path
-        description: name of the Audience
-        required: true
-        schema:
-          type: string
-          example: ONLY_FR
-      requestBody:
-        description: |-
-          - If override_type == fixed, you can deactivate Remote Config Override. It will be added to the Remote Configs Override History.
-          - If override_type == abtest, you can't deactivate Remote Config Override. You need to call the endpoint /abtests/{abtest_name}/promote
-        required: true
-        content:
-          application/json:
-            schema:
-              required:
-              - activated
-              type: object
-              properties:
-                activated:
-                  type: boolean
-      responses:
-        204:
-          description: The Remote Config Override was activated successfully.
-        400:
-          description: The Remote Config Override has NOT been activated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errorResponse'
 
 components:
   schemas:
+    ABTest:
+      required:
+      - abtest_name
+      - target_user_percent
+      - variants
+      type: object
+      properties:
+        abtest_name:
+          type: string
+          example: LightColors
+        target_user_percent:
+          type: integer
+          example: 100
+        variants:
+          type: array
+          items:
+            type: string
+          example:
+          - Yellow
+          - Orange
+    RemoteConfigOverride:
+      required:
+      - activated
+      - override_type
+      - override_value
+      type: object
+      properties:
+        activated:
+          type: boolean
+        override_type:
+          type: string
+          enum:
+          - abtest
+          - fixed
+        override_value:
+          oneOf:
+          - $ref: '#/components/schemas/ABTest'
     errorResponse:
+      required:
+      - error
       type: object
       properties:
         error:
