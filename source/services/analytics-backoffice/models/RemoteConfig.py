@@ -92,7 +92,8 @@ class RemoteConfig:
         """
         This method returns a dict that represents the RemoteConfig.
         """
-        return self.__data
+        overrides = {override.audience_name: override for override in self.overrides}
+        return self.__data.copy() | {"overrides": overrides}
 
     def update_database(self):
         """
