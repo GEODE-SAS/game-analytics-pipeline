@@ -1,9 +1,7 @@
 """
 This module contains ABTest class.
 """
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
-
-from utils import constants
+from typing import Any
 
 
 class ABTest:
@@ -11,11 +9,8 @@ class ABTest:
     This class represents an ABTest.
     """
 
-    def __init__(self, dynamodb: DynamoDBServiceResource, abtest_name: str):
-        response = dynamodb.Table(constants.ABTESTS_TABLE).get_item(
-            Key={"abtest_name": abtest_name}
-        )
-        self.__data = response["Item"]
+    def __init__(self, data: dict[str, Any]):
+        self.__data = data
 
     @property
     def abtest_name(self) -> str:

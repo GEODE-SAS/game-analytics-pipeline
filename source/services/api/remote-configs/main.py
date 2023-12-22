@@ -1,6 +1,9 @@
 """
 Lambda handler
 """
+import os
+import sys
+
 import boto3
 
 from models.ABTest import ABTest
@@ -10,7 +13,8 @@ from models.RemoteConfigOverride import RemoteConfigOverride
 from models.UserABTest import UserABTest
 
 
-dynamodb = boto3.resource("dynamodb")
+session = boto3.Session(profile_name=os.environ.get("AWS_PROFILE_NAME"))
+dynamodb = session.resource("dynamodb")
 
 
 def handler(event: dict, context: dict):
@@ -59,7 +63,7 @@ def handler(event: dict, context: dict):
             continue
 
         # override_type == abtest
-        abtest = ABTest(dynamodb, override.override_value)
+        abtest = ABTest(override.override_value)
         user_abtest = UserABTest(dynamodb, user_ID, abtest)
 
         if not user_abtest.exists:
@@ -71,3 +75,17 @@ def handler(event: dict, context: dict):
         }
 
     return result
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Exit... Missing `applicationId` and `userId`")
+        sys.exit(1)
+
+    event = {
+        "applicationId": sys.argv[1],
+        "country": "FR",
+        "payload": {},
+        "userId": sys.argv[2],
+    }
+    print(handler(event, {}))

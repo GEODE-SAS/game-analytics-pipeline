@@ -25,9 +25,11 @@ class Audience:
         This static method returns a list of all event_based Audiences for uid.
         """
         response = dynamodb.Table(constants.USERS_AUDIENCES_TABLE).query(
-            IndexName="uid-index", KeyConditionExpression=Key("uid").eq(uid)
+            IndexName="uid-index",
+            KeyConditionExpression=Key("uid").eq(uid),
         )
 
+        # TODO soft deleted Audiences not handled
         return [Audience(item["audience_name"]) for item in response["Items"]]
 
     @staticmethod
@@ -39,8 +41,9 @@ class Audience:
         This static method returns a list of all property_based Audiences for uid.
         """
         response = dynamodb.Table(constants.AUDIENCES_TABLE).query(
-            IndexName="type-index",
-            KeyConditionExpression=Key("type").eq("property_based"),
+            IndexName="type-deleted-index",
+            KeyConditionExpression=Key("type").eq("property_based")
+            & Key("deleted").eq(0),
         )
 
         audiences = []

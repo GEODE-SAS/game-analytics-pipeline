@@ -1716,10 +1716,12 @@ Resources:
         - AttributeName: audience_name
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: type-index
+        - IndexName: type-deleted-index
           KeySchema:
             - AttributeName: type
               KeyType: HASH
+            - AttributeName: deleted
+              KeyType: RANGE
           Projection:
             ProjectionType: ALL
         - IndexName: deleted-index
