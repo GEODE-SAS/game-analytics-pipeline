@@ -3,6 +3,7 @@ Lambda handler
 """
 import os
 import sys
+from typing import Any
 
 import boto3
 
@@ -17,7 +18,7 @@ session = boto3.Session(profile_name=os.environ.get("AWS_PROFILE_NAME"))
 dynamodb = session.resource("dynamodb")
 
 
-def handler(event: dict, context: dict):
+def handler(event: dict[str, Any], context: dict[str, Any]):
     """
     lambda handler
     """

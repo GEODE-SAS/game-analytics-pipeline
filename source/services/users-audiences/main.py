@@ -4,6 +4,7 @@ This module lambda assigns audiences to users.
 from collections import defaultdict
 from datetime import datetime, timedelta
 from time import sleep, time
+from typing import Any
 
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -15,7 +16,7 @@ athena = boto3.client("athena")
 dynamodb = boto3.resource("dynamodb")
 
 
-def handler(event: dict, context: dict):
+def handler(event: dict[str, Any], context: dict[str, Any]):
     """
     lambda handler
     """
