@@ -58,13 +58,13 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
 
         if override.override_type == "fixed":
             result[remote_config.remote_config_name] = {
-                "value": override.override_value,
+                "value": override.fixed_value,
                 "value_origin": "reference_value",
             }
             continue
 
         # override_type == abtest
-        abtest = ABTest(override.override_value)
+        abtest = ABTest(override.abtest_value)
         user_abtest = UserABTest(dynamodb, user_ID, abtest)
 
         if not user_abtest.exists:

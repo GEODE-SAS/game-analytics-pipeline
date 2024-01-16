@@ -38,6 +38,13 @@ class RemoteConfigOverride:
         return [RemoteConfigOverride(item) for item in response["Items"]]
 
     @property
+    def abtest_value(self) -> dict[str, Any] | None:
+        """
+        This property retus abtest_value.
+        """
+        return self.__data.get("abtest_value")
+
+    @property
     def audience_name(self) -> str:
         """
         This property retus audience_name.
@@ -45,15 +52,15 @@ class RemoteConfigOverride:
         return self.__data["audience_name"]
 
     @property
+    def fixed_value(self) -> str | None:
+        """
+        This property retus fixed_value.
+        """
+        return self.__data.get("fixed_value")
+
+    @property
     def override_type(self) -> str:
         """
         This property retus override_type.
         """
         return self.__data["override_type"]
-
-    @property
-    def override_value(self) -> str:
-        """
-        This property retus override_value.
-        """
-        return self.__data["override_value"]

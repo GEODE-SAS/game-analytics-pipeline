@@ -29,6 +29,7 @@ source .venv/bin/activate
 
 if ! cmp -s requirements.txt .venv/requirements.txt; then
     echo "Updating local dependencies...\n"
+    pip install --upgrade pip
     pip install -r requirements.txt >/dev/null
     cp requirements.txt .venv/requirements.txt
 fi

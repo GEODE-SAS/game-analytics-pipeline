@@ -9,6 +9,7 @@ refresh_venv() {
     fi
     if ! cmp -s requirements.txt .venv/requirements.txt; then
         source .venv/bin/activate
+        pip install --upgrade pip
         pip install -r requirements.txt
         deactivate
         cp requirements.txt .venv/requirements.txt

@@ -303,7 +303,9 @@ paths:
 
           - key of `overrides` should be existing audience_name.
 
-          - `override_value` should be string if `override_type` == `fixed` and object if `override_type` == `abtest`.
+          - `abtest_value` is required only if `override_type` == `abtest`.
+
+          - `fixed_value` is required only if `override_type` == `fixed`.
         required: true
         content:
           application/json:
@@ -370,21 +372,23 @@ components:
           - Orange
     RemoteConfigOverride:
       required:
-      - activated
+      - active
       - override_type
-      - override_value
       type: object
       properties:
-        activated:
+        abtest_value:
+          oneOf:
+          - $ref: '#/components/schemas/ABTest'
+        active:
           type: boolean
+        fixed_value:
+          type: string
+          example: Orange
         override_type:
           type: string
           enum:
           - abtest
           - fixed
-        override_value:
-          oneOf:
-          - $ref: '#/components/schemas/ABTest'
     errorResponse:
       required:
       - error
