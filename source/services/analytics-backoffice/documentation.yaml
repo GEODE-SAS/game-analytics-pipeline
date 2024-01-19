@@ -379,6 +379,9 @@ components:
         abtest_value:
           oneOf:
           - $ref: '#/components/schemas/ABTest'
+        audience_name:
+          type: string
+          example: ALL
         active:
           type: boolean
         fixed_value:
