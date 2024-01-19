@@ -59,7 +59,7 @@ class RemoteConfig:
                 continue
 
             database.Table(constants.TABLE_REMOTE_CONFIGS).update_item(
-                Key={"remote_config_name": "TestRemote"},
+                Key={"remote_config_name": remote_config.remote_config_name},
                 UpdateExpression=f"REMOVE overrides.{audience_name}",
             )
 
