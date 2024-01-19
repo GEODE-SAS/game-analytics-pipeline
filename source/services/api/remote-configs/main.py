@@ -10,7 +10,6 @@ import boto3
 from models.ABTest import ABTest
 from models.Audience import Audience
 from models.RemoteConfig import RemoteConfig
-from models.RemoteConfigOverride import RemoteConfigOverride
 from models.UserABTest import UserABTest
 
 
@@ -35,16 +34,22 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
     if not remote_configs:
         return result
 
-    user_audiences = []
+    user_audiences: list[Audience] = []
     user_audiences.extend(Audience.event_based_audiences(dynamodb, user_ID))
     user_audiences.extend(Audience.property_based_audiences(dynamodb, payload))
+    user_audience_names = [audience.audience_name for audience in user_audiences] + [
+        "ALL"
+    ]
 
     for remote_config in remote_configs:
-        overrides = RemoteConfigOverride.filter_audiences(
-            dynamodb, remote_config.remote_config_name, user_audiences
-        )
+        # First, we search if there is an active override that matches with user audiences.
+        user_override = None
+        for audience_name, override in remote_config.overrides.items():
+            if override.active and audience_name in user_audience_names:
+                user_override = override
+                break
 
-        if not overrides:
+        if not user_override:
             # RemoteConfig has no Override or there is no audience that matches the user
             result[remote_config.remote_config_name] = {
                 "value": remote_config.reference_value,
@@ -52,19 +57,15 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
             }
             continue
 
-        # If there are several overrides, it is due to an inconsistency in analytical decisions
-        # So we take the first override
-        override = next(iter(overrides))
-
-        if override.override_type == "fixed":
+        if user_override.override_type == "fixed":
             result[remote_config.remote_config_name] = {
-                "value": override.fixed_value,
+                "value": user_override.fixed_value,
                 "value_origin": "reference_value",
             }
             continue
 
         # override_type == abtest
-        abtest = ABTest(override.abtest_value)
+        abtest = ABTest(user_override.abtest_value)
         user_abtest = UserABTest(dynamodb, user_ID, abtest)
 
         if not user_abtest.exists:

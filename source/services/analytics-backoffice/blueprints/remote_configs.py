@@ -16,7 +16,19 @@ def get_remote_configs():
     """
     This endpoint returns all remote configs.
     """
-    return jsonify(RemoteConfig.get_all(current_app.config["database"]))
+    remote_configs = RemoteConfig.get_all(current_app.config["database"])
+
+    # Dazzly Tools needs audience_name in override format
+    result = []
+    for remote_config in remote_configs:
+        overrides = {}
+        for audience_name, override in remote_config.overrides.items():
+            overrides[audience_name] = override.to_dict() | {
+                "audience_name": audience_name
+            }
+        result.append(remote_config.to_dict() | {"overrides": overrides})
+
+    return jsonify(result)
 
 
 @remote_configs_endpoints.post("/<remote_config_name>")
