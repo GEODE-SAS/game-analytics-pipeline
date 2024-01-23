@@ -1,4 +1,4 @@
-# This script is used to run analytics-backoffice REST API locally
+# This script is used to run remote-configs lambda locally
 
 BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
 export PROJECT_NAME="geode-analytics"
@@ -28,4 +28,4 @@ if ! cmp -s requirements.txt .venv/requirements.txt; then
     cp requirements.txt .venv/requirements.txt
 fi
 
-python main.py
+python main.py $@

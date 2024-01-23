@@ -622,6 +622,105 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
 
+  DatavaultBackupFunction:
+    Type: AWS::Serverless::Function
+    Condition: ConfigureProdMode
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-DatavaultBackupFunction'
+      Handler: main.handler
+      Description: 'Function that backups Datavault to s3'
+      Runtime: python3.11
+      CodeUri: 
+        Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
+        Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"], "datavault-backup.zip"]]
+      Timeout: 300
+      MemorySize: 256
+      Events:
+        CrashReport:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [JobScheduleSettings, ScheduledJobIntervals, EveryDay]
+      Role: !GetAtt DatavaultBackupRole.Arn
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: 'Solution does not use VPC resources and does not require VPC connectivity'
+
+  DatavaultBackupRole:
+    Type: AWS::IAM::Role
+    Condition: ConfigureProdMode
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-DatavaultBackupRole'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+      - PolicyName: UsersAudiencesPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Sid: CWLogs
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutDestination
+                - logs:PutLogEvents
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
+            - Sid: SecretsManagerAccess
+              Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - '*'
+
+  DatavaultBackupFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: ConfigureProdMode
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DatavaultBackupFunction}'
+      RetentionInDays: !FindInMap [CloudWatchSettings, LogGroup, RetentionInDays]
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: 'CloudWatch Log Groups provide encryption at rest by default using keys managed by AWS'
+
+  DatavaultBackupAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: ConfigureProdMode
+    Properties:
+      AlarmActions:
+        - !Ref Notifications
+      AlarmDescription: !Sub 'Lambda Error Alarm for stack ${AWS::StackName}'
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: s1
+          Expression: m1
+        - Id: m1
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DatavaultBackupFunction
+              MetricName: Errors
+              Namespace: AWS/Lambda
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      Threshold: 1
+      TreatMissingData: notBreaching
+
   AnalyticsProcessingFunction:
     Condition: StreamingAnalytics
     Type: AWS::Serverless::Function
