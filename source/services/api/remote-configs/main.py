@@ -1,7 +1,6 @@
 """
 Lambda handler
 """
-import os
 import sys
 from typing import Any
 
@@ -14,8 +13,7 @@ from models.RemoteConfigOverride import RemoteConfigOverride
 from models.UserABTest import UserABTest
 
 
-session = boto3.Session(profile_name=os.environ.get("AWS_PROFILE_NAME"))
-dynamodb = session.resource("dynamodb")
+dynamodb = boto3.resource("dynamodb")
 
 
 def handler(event: dict[str, Any], context: dict[str, Any]):

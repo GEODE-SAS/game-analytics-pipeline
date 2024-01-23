@@ -3,7 +3,6 @@ This module contains main endpoints of analytics backoffice API.
 """
 import contextlib
 from decimal import Decimal
-import os
 
 import boto3
 from flask import Flask, jsonify, request, wrappers
@@ -44,8 +43,8 @@ class FlaskApp(Flask):
         self.json_provider_class = FlaskAppEncoder
         self.json = FlaskAppEncoder(self)
 
-        self.config["athena"] = session.client("athena")
-        self.config["database"] = session.resource("dynamodb")
+        self.config["athena"] = boto3.client("athena")
+        self.config["database"] = boto3.resource("dynamodb")
 
         @self.after_request
         def after_request(response: wrappers.Response):
@@ -68,7 +67,6 @@ class FlaskApp(Flask):
             return jsonify(), 204
 
 
-session = boto3.session.Session(profile_name=os.environ.get("AWS_PROFILE_NAME"))
 app = FlaskApp(__name__)
 app.register_blueprint(applications_endpoints, url_prefix="/applications")
 app.register_blueprint(audiences_endpoints, url_prefix="/audiences")
