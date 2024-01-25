@@ -48,3 +48,21 @@ def set_remote_config(remote_config_name: str):
 
     remote_config.update_database()
     return jsonify(), 204
+
+
+@remote_configs_endpoints.delete("/<remote_config_name>")
+def delete_remote_config(remote_config_name: str):
+    """
+    This endpoint deletes a remote config.
+    """
+    database: DynamoDBServiceResource = current_app.config["database"]
+
+    remote_config = RemoteConfig.from_database(database, remote_config_name)
+    if not remote_config:
+        return jsonify(error=f"Invalid remote_config_name : {remote_config_name}"), 400
+
+    if remote_config.has_active_override:
+        return (jsonify(error="Remote config has active overrides"), 400)
+
+    remote_config.delete()
+    return jsonify(), 204

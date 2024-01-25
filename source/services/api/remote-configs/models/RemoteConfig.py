@@ -3,7 +3,7 @@ This module contains RemoteConfig class.
 """
 from typing import Any, List
 
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from models.RemoteConfigOverride import RemoteConfigOverride

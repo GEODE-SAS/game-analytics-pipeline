@@ -25,6 +25,18 @@ class RemoteConfig:
             for audience_name, override in self.__data["overrides"].items()
         }
 
+    @classmethod
+    def from_database(cls, database: DynamoDBServiceResource, remote_config_name: str):
+        """
+        This method creates an instance of RemoteConfig by fetching database.
+        It returns None if there is no RemoteConfig with <remote_config_name> in database.
+        """
+        response = database.Table(constants.TABLE_REMOTE_CONFIGS).get_item(
+            Key={"remote_config_name": remote_config_name}
+        )
+        if item := response.get("Item"):
+            return cls(database, item)
+
     @staticmethod
     def get_all(database: DynamoDBServiceResource) -> List["RemoteConfig"]:
         """
@@ -78,6 +90,16 @@ class RemoteConfig:
         return self.__data["description"]
 
     @property
+    def has_active_override(self) -> bool:
+        """
+        This method returns True if RemoteConfig has active override else False.
+        """
+        for override in self.overrides.values():
+            if override.active:
+                return True
+        return False
+
+    @property
     def overrides(self) -> dict[str, RemoteConfigOverride]:
         """
         This method returns overrides.
@@ -97,6 +119,14 @@ class RemoteConfig:
         This method returns remote_config_name.
         """
         return self.__data["remote_config_name"]
+
+    def delete(self):
+        """
+        This method deletes remote config from database.
+        """
+        self.__database.Table(constants.TABLE_REMOTE_CONFIGS).delete_item(
+            Key={"remote_config_name": self.remote_config_name}
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """

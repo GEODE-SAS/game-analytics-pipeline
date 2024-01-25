@@ -59,5 +59,5 @@ def delete_audience(audience_name: str):
     except ValueError as e:
         return jsonify(error=str(e)), 400
 
-    audience.soft_delete()
+    audience.delete()
     return jsonify(), 204

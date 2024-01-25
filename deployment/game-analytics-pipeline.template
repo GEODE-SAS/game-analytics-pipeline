@@ -1807,25 +1807,15 @@ Resources:
       AttributeDefinitions:
         - AttributeName: audience_name
           AttributeType: S
-        - AttributeName: deleted
-          AttributeType: N
         - AttributeName: type
           AttributeType: S
       KeySchema:
         - AttributeName: audience_name
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: type-deleted-index
+        - IndexName: type-index
           KeySchema:
             - AttributeName: type
-              KeyType: HASH
-            - AttributeName: deleted
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: deleted-index
-          KeySchema:
-            - AttributeName: deleted
               KeyType: HASH
           Projection:
             ProjectionType: ALL
