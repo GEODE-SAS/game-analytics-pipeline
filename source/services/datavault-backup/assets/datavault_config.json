@@ -1,61 +1,61 @@
 {
     "ad_networks": {
-        "backup_all": true
+        "partitionned": false
     },
     "apps": {
-        "backup_all": true
+        "partitionned": false
     },
     "bucket_campaign_info": {
-        "backup_all": true
+        "partitionned": false
     },
     "campaign_buckets": {
-        "backup_all": true
+        "partitionned": false
     },
     "campaigns": {
-        "backup_all": true
+        "partitionned": false
     },
     "campaigns_targeting_tags": {
-        "backup_all": true
+        "partitionned": false
     },
     "daily_ad_revenue": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "date"
     },
     "daily_country_spend": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "date"
     },
     "events": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "created_at"
     },
     "installs": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "created_at"
     },
     "publisher_apps": {
-        "backup_all": true
+        "partitionned": false
     },
     "reporting_cohort_metrics": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "event_date"
     },
     "reporting_metrics": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "date"
     },
     "sk_ad_networks": {
-        "backup_all": true
+        "partitionned": false
     },
     "skan_ad_network_metrics": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "date"
     },
     "skan_apple_metrics": {
-        "backup_all": false,
+        "partitionned": true,
         "partition_date_field": "date"
     },
     "targeting_tags": {
-        "backup_all": true
+        "partitionned": false
     }
 }

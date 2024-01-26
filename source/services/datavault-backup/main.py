@@ -5,12 +5,11 @@ Tenjin Documentation : https://docs.tenjin.com/docs/datavault-introduction
 """
 from datetime import datetime, timedelta
 import json
+import os
 from typing import Any
 
 import boto3
 import redshift_connector
-
-from utils import constants
 
 
 secrets_manager = boto3.client("secretsmanager")
@@ -23,6 +22,8 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
     print("Datavault backup.")
     print(f"Event: {event}")
     print(f"Context: {context}")
+
+    BUCKET = os.environ["TENJIN_DATAVAULT_BUCKET"]
 
     datavault_secrets = json.loads(
         secrets_manager.get_secret_value(SecretId="datavault-backup")["SecretString"]
@@ -44,7 +45,7 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
         datavault_config = json.load(f)
 
     print(
-        f"Will backup Tenjin Datavault database to {constants.BUCKET} s3 bucket using UNLOAD command."
+        f"Will backup Tenjin Datavault database to {BUCKET} s3 bucket using UNLOAD command."
     )
 
     now = datetime.now()
@@ -53,13 +54,15 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
 
     for table, config in datavault_config.items():
         print(f"    • Will backup {table} Table...")
-        need_backup_all = config["backup_all"] is True
+        partitionned = config["partitionned"] is True
+        key = "partitioned-tables" if partitionned else "non-partitioned-tables"
+        key += f"/{table}"
 
         SELECT_QUERY = f"""
             SELECT *
             FROM {table}
         """
-        if not need_backup_all:
+        if partitionned:
             date_field = config["partition_date_field"]
             SELECT_QUERY = f"""
                 SELECT
@@ -73,13 +76,13 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
 
         UNLOAD_QUERY = f"""
             UNLOAD ('{SELECT_QUERY}')
-            TO 's3://{constants.BUCKET}/{table}/'
+            TO 's3://{BUCKET}/{table}/'
             ACCESS_KEY_ID '{ACCESS_KEY_ID}'
             SECRET_ACCESS_KEY '{SECRET_ACCESS_KEY}'
             FORMAT AS PARQUET
             ALLOWOVERWRITE
         """
-        if not need_backup_all:
+        if partitionned:
             UNLOAD_QUERY += "\nPARTITION BY (year, month, day)"
 
         cursor.execute(UNLOAD_QUERY)

@@ -635,6 +635,9 @@ Resources:
         Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"], "datavault-backup.zip"]]
       Timeout: 300
       MemorySize: 256
+      Environment:
+        Variables:
+          TENJIN_DATAVAULT_BUCKET: !Ref TenjinDatavaultBucket
       Events:
         CrashReport:
           Type: Schedule
@@ -1123,7 +1126,39 @@ Resources:
             NoncurrentVersionTransitions:
               - StorageClass: STANDARD_IA
                 TransitionInDays: 30
-  
+
+  TenjinDatavaultBucket:
+    Type: AWS::S3::Bucket
+    Condition: ConfigureProdMode
+    DeletionPolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName: !Sub '${AWS::StackName}-tenjin-datavault'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      LifecycleConfiguration:
+        Rules:
+          - Id: glacier-deep-archive-transition
+            Transitions:
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 0
+            Prefix: partitioned-tables
+            Status: Enabled
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W51
+            reason: 'S3 Bucket Policy not needed; this is a private bucket that should only be accessed by the resources defined in the template, which have IAM permissions defined to access. For additional permissions customers can define them on the bucket after launch'
+
   ##########
   # Athena #
   ##########
