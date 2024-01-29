@@ -41,13 +41,15 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
 
     for remote_config in remote_configs:
         # First, we search if there is an active override that matches with user audiences.
+        user_audience = None
         user_override = None
         for audience_name, override in remote_config.overrides.items():
             if override.active and audience_name in user_audience_names:
+                user_audience = audience_name
                 user_override = override
                 break
 
-        if not user_override:
+        if not user_audience or not user_override:
             # RemoteConfig has no Override or there is no audience that matches the user
             result[remote_config.remote_config_name] = {
                 "value": remote_config.reference_value,
@@ -63,7 +65,9 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
             continue
 
         # override_type == abtest
-        abtest = ABTest(user_override.abtest_value)
+        abtest = ABTest(
+            remote_config.remote_config_name, user_audience, user_override.abtest_value
+        )
         user_abtest = UserABTest(dynamodb, user_ID, abtest)
 
         if not user_abtest.exists:
@@ -85,7 +89,7 @@ if __name__ == "__main__":
     event = {
         "applicationId": sys.argv[1],
         "country": "FR",
-        "payload": {},
+        "payload": {"developer_device_id": "NA"},
         "userId": sys.argv[2],
     }
     print(handler(event, {}))

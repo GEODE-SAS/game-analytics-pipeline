@@ -5,6 +5,7 @@ from typing import Any, List
 
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
+from models.ABTest import ABTest
 from models.Application import Application
 from models.Audience import Audience
 from models.RemoteConfigOverride import RemoteConfigOverride
@@ -138,6 +139,19 @@ class RemoteConfig:
         """
         This method creates RemoteConfig in database.
         """
+        # Check if an ABTest override has been deleted
+        if remote_config := RemoteConfig.from_database(
+            self.__database, self.remote_config_name
+        ):
+            for audience_name, override in remote_config.overrides.items():
+                if override.override_type != "abtest":
+                    continue
+                if audience_name not in self.overrides:
+                    # This ABTest has been deleted
+                    ABTest.purge_users_abtests(
+                        self.__database, self.remote_config_name, audience_name
+                    )
+
         self.__database.Table(constants.TABLE_REMOTE_CONFIGS).put_item(
             Item={
                 "remote_config_name": self.remote_config_name,

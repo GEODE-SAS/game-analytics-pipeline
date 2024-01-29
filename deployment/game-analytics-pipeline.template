@@ -1897,17 +1897,17 @@ Resources:
       AttributeDefinitions:
         - AttributeName: uid
           AttributeType: S
-        - AttributeName: abtest_name
+        - AttributeName: abtest_ID
           AttributeType: S
       KeySchema:
         - AttributeName: uid
           KeyType: HASH
-        - AttributeName: abtest_name
+        - AttributeName: abtest_ID
           KeyType: RANGE
       GlobalSecondaryIndexes:
-      - IndexName: abtest_name-index
+      - IndexName: abtest_ID-index
         KeySchema:
-          - AttributeName: abtest_name
+          - AttributeName: abtest_ID
             KeyType: HASH
         Projection:
           ProjectionType: INCLUDE

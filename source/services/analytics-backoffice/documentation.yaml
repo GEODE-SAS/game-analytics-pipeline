@@ -376,14 +376,10 @@ components:
   schemas:
     ABTest:
       required:
-      - abtest_name
       - target_user_percent
       - variants
       type: object
       properties:
-        abtest_name:
-          type: string
-          example: LightColors
         target_user_percent:
           type: integer
           example: 100

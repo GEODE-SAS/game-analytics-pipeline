@@ -9,15 +9,19 @@ class ABTest:
     This class represents an ABTest.
     """
 
-    def __init__(self, data: dict[str, Any]):
+    def __init__(
+        self, remote_config_name: str, audience_name: str, data: dict[str, Any]
+    ):
         self.__data = data
+        self.__ID = f"{remote_config_name}-{audience_name}"
 
     @property
-    def abtest_name(self) -> str:
+    def ID(self) -> str:
         """
-        This property returns abtest_name.
+        This property returns ABTest ID.
+        It's the concatenation of remote_config_name and audience_name.
         """
-        return self.__data["abtest_name"]
+        return self.__ID
 
     @property
     def target_user_percent(self) -> int:

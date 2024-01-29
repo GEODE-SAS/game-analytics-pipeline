@@ -27,13 +27,6 @@ class RemoteConfigOverride:
         return int(self.__data["active"]) == 1
 
     @property
-    def audience_name(self) -> str:
-        """
-        This property returns audience_name.
-        """
-        return self.__data["audience_name"]
-
-    @property
     def fixed_value(self) -> str | None:
         """
         This property returns fixed_value.
