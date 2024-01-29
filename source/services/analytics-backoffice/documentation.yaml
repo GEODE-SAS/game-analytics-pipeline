@@ -89,6 +89,9 @@ paths:
                     application_name:
                       type: string
                       example: dazzly_android_dev
+                    attribution:
+                      type: string
+                      example: "{}"
                     day:
                       type: string
                       example: 16

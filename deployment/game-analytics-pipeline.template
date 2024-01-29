@@ -1257,6 +1257,8 @@ Resources:
               Type: string
             - Name: user
               Type: string
+            - Name: attribution
+              Type: string
             - Name: device
               Type: string
             - Name: event_version
@@ -2717,6 +2719,9 @@ Resources:
                 remote_config:
                   type: object
                   description: JSON object detailing player's A/B test groups
+                attribution:
+                  type: object
+                  description: JSON object detailing player's attribution
                 event_data:
                   type: object
           securitySchemes:

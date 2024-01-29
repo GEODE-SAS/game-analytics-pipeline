@@ -154,6 +154,9 @@ class Event {
         if(event.hasOwnProperty('remote_config')){
           transformed_event.remote_config = event.remote_config;
         }
+        if(event.hasOwnProperty('attribution')){
+          transformed_event.attribution = event.attribution;
+        }
         if(event.hasOwnProperty('event_data')){
           transformed_event.event_data = event.event_data;
           if(event.event_data.hasOwnProperty('currency') && event.event_data.hasOwnProperty('revenues')){
@@ -222,6 +225,9 @@ class Event {
         }
         if(event.hasOwnProperty('remote_config')){
           unregistered_format.remote_config = event.remote_config;
+        }
+        if(event.hasOwnProperty('attribution')){
+          unregistered_format.attribution = event.attribution;
         }
         
         return Promise.resolve({

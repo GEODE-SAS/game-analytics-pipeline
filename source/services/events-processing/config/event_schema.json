@@ -68,6 +68,10 @@
 					"type": "object",
 					"description": "JSON object detailing player's A/B test groups"
 				},
+				"attribution": {
+					"type": "object",
+					"description": "JSON object detailing player's attribution"
+				},
 				"event_data": {
 					"type": "object",
 					"description": "JSON object detailing event's data"
