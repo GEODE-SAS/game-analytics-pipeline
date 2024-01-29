@@ -1842,25 +1842,15 @@ Resources:
       AttributeDefinitions:
         - AttributeName: audience_name
           AttributeType: S
-        - AttributeName: deleted
-          AttributeType: N
         - AttributeName: type
           AttributeType: S
       KeySchema:
         - AttributeName: audience_name
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: type-deleted-index
+        - IndexName: type-index
           KeySchema:
             - AttributeName: type
-              KeyType: HASH
-            - AttributeName: deleted
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: deleted-index
-          KeySchema:
-            - AttributeName: deleted
               KeyType: HASH
           Projection:
             ProjectionType: ALL
@@ -1942,17 +1932,17 @@ Resources:
       AttributeDefinitions:
         - AttributeName: uid
           AttributeType: S
-        - AttributeName: abtest_name
+        - AttributeName: abtest_ID
           AttributeType: S
       KeySchema:
         - AttributeName: uid
           KeyType: HASH
-        - AttributeName: abtest_name
+        - AttributeName: abtest_ID
           KeyType: RANGE
       GlobalSecondaryIndexes:
-      - IndexName: abtest_name-index
+      - IndexName: abtest_ID-index
         KeySchema:
-          - AttributeName: abtest_name
+          - AttributeName: abtest_ID
             KeyType: HASH
         Projection:
           ProjectionType: INCLUDE

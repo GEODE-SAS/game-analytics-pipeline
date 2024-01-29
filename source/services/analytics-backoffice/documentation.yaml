@@ -219,7 +219,7 @@ paths:
                 $ref: '#/components/schemas/errorResponse'
     delete:
       summary: Delete Audience
-      description: This endpoint deletes Audience (soft delete).
+      description: This endpoint deletes Audience.
       tags:
       - Audiences
       parameters:
@@ -347,19 +347,39 @@ paths:
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/errorResponse'
+
+    delete:
+      summary: Delete Remote Config
+      description: This endpoint deletes Remote Config.
+      tags:
+      - Remote Configs
+      parameters:
+      - name: remote_config_name
+        in: path
+        description: name of the Remote Config
+        required: true
+        schema:
+          type: string
+          example: ColorButton
+      responses:
+        204:
+          description: The Remote Config was deleted successfully.
+        400:
+          description: The Remote Config has NOT been deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
 
 components:
   schemas:
     ABTest:
       required:
-      - abtest_name
       - target_user_percent
       - variants
       type: object
       properties:
-        abtest_name:
-          type: string
-          example: LightColors
         target_user_percent:
           type: integer
           example: 100
@@ -379,6 +399,9 @@ components:
         abtest_value:
           oneOf:
           - $ref: '#/components/schemas/ABTest'
+        audience_name:
+          type: string
+          example: ALL
         active:
           type: boolean
         fixed_value:

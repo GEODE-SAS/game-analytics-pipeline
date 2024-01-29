@@ -3,7 +3,6 @@ This module contains Audience class.
 """
 from typing import Any, List
 
-from boto3.dynamodb.conditions import Key
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from utils import constants
@@ -38,9 +37,7 @@ class Audience:
         """
         This static method returns all audiences.
         """
-        response = database.Table(constants.TABLE_AUDIENCES).query(
-            IndexName="deleted-index", KeyConditionExpression=Key("deleted").eq(0)
-        )
+        response = database.Table(constants.TABLE_AUDIENCES).scan()
         return [Audience(database, item) for item in response["Items"]]
 
     @property
@@ -58,13 +55,6 @@ class Audience:
         return self.__data["condition"]
 
     @property
-    def deleted(self) -> bool:
-        """
-        This method returns True if Audience is soft deleted, else False.
-        """
-        return self.__data["deleted"]
-
-    @property
     def description(self) -> str:
         """
         This method returns description.
@@ -78,15 +68,12 @@ class Audience:
         """
         return self.__data["type"]
 
-    def soft_delete(self):
+    def delete(self):
         """
-        This method soft deletes audience from database.
+        This method deletes audience from database.
         """
-        self.__database.Table(constants.TABLE_AUDIENCES).update_item(
-            Key={"audience_name": self.audience_name},
-            AttributeUpdates={
-                "deleted": {"Value": 1, "Action": "PUT"},
-            },
+        self.__database.Table(constants.TABLE_AUDIENCES).delete_item(
+            Key={"audience_name": self.audience_name}
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -103,7 +90,6 @@ class Audience:
             Item={
                 "audience_name": self.audience_name,
                 "condition": self.condition,
-                "deleted": 0,
                 "description": self.description,
                 "type": self.type,
             }
@@ -111,7 +97,6 @@ class Audience:
 
     def __assert_data(self, data: dict[str, Any]):
         data = data.copy()
-        data.pop("deleted", None)
         audience_name = data.pop("audience_name")
         condition = data.pop("condition")
         description = data.pop("description")
