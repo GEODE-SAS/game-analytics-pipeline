@@ -69,6 +69,15 @@ Conditions:
   StreamingAnalytics: !Equals [!Ref EnableStreamingAnalytics, 'Yes']
   ConfigureDevMode: !Equals [!Ref SolutionMode, 'Dev']
   ConfigureProdMode: !Equals [!Ref SolutionMode, 'Prod']
+  IsChina:
+    Fn::Or:
+      - Fn::Equals: [ !Ref "AWS::Region", "cn-north-1" ]
+      - Fn::Equals: [ !Ref "AWS::Region", "cn-northwest-1" ]
+  IsProdAndNotChina:
+    Fn::And:
+      - Condition: ConfigureProdMode
+      - Fn::Not:
+        - Condition: IsChina
 
 Globals:
   Function:
@@ -621,7 +630,7 @@ Resources:
 
   DatavaultBackupFunction:
     Type: AWS::Serverless::Function
-    Condition: ConfigureProdMode
+    Condition: IsProdAndNotChina
     Properties:
       FunctionName: !Sub '${AWS::StackName}-DatavaultBackupFunction'
       Handler: main.handler
@@ -649,7 +658,7 @@ Resources:
 
   DatavaultBackupRole:
     Type: AWS::IAM::Role
-    Condition: ConfigureProdMode
+    Condition: IsProdAndNotChina
     Properties:
       RoleName: !Sub '${AWS::StackName}-DatavaultBackupRole'
       AssumeRolePolicyDocument:
@@ -684,7 +693,7 @@ Resources:
 
   DatavaultBackupFunctionLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: ConfigureProdMode
+    Condition: IsProdAndNotChina
     Properties:
       LogGroupName: !Sub '/aws/lambda/${DatavaultBackupFunction}'
       RetentionInDays: !FindInMap [CloudWatchSettings, LogGroup, RetentionInDays]
@@ -696,7 +705,7 @@ Resources:
 
   DatavaultBackupAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: ConfigureProdMode
+    Condition: IsProdAndNotChina
     Properties:
       AlarmActions:
         - !Ref Notifications
