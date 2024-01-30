@@ -76,7 +76,7 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
 
         UNLOAD_QUERY = f"""
             UNLOAD ('{SELECT_QUERY}')
-            TO 's3://{BUCKET}/{table}/'
+            TO 's3://{BUCKET}/{key}/'
             ACCESS_KEY_ID '{ACCESS_KEY_ID}'
             SECRET_ACCESS_KEY '{SECRET_ACCESS_KEY}'
             FORMAT AS PARQUET

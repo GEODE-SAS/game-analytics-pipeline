@@ -1,4 +1,8 @@
 {
+    "ad_mediation_impressions_preview": {
+        "partitionned": true,
+        "partition_date_field": "engaged_at"
+    },
     "ad_networks": {
         "partitionned": false
     },
