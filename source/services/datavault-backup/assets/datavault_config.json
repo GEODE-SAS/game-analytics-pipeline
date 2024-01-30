@@ -1,0 +1,61 @@
+{
+    "ad_networks": {
+        "partitionned": false
+    },
+    "apps": {
+        "partitionned": false
+    },
+    "bucket_campaign_info": {
+        "partitionned": false
+    },
+    "campaign_buckets": {
+        "partitionned": false
+    },
+    "campaigns": {
+        "partitionned": false
+    },
+    "campaigns_targeting_tags": {
+        "partitionned": false
+    },
+    "daily_ad_revenue": {
+        "partitionned": true,
+        "partition_date_field": "date"
+    },
+    "daily_country_spend": {
+        "partitionned": true,
+        "partition_date_field": "date"
+    },
+    "events": {
+        "partitionned": true,
+        "partition_date_field": "created_at"
+    },
+    "installs": {
+        "partitionned": true,
+        "partition_date_field": "created_at"
+    },
+    "publisher_apps": {
+        "partitionned": false
+    },
+    "reporting_cohort_metrics": {
+        "partitionned": true,
+        "partition_date_field": "event_date"
+    },
+    "reporting_metrics": {
+        "partitionned": true,
+        "partition_date_field": "date"
+    },
+    "sk_ad_networks": {
+        "partitionned": false
+    },
+    "skan_ad_network_metrics": {
+        "partitionned": true,
+        "partition_date_field": "date"
+    },
+    "skan_apple_metrics": {
+        "partitionned": true,
+        "partition_date_field": "date"
+    },
+    "targeting_tags": {
+        "partitionned": false
+    }
+}

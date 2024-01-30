@@ -1,19 +1,21 @@
 """
 Lambda handler
 """
+import sys
+from typing import Any
+
 import boto3
 
 from models.ABTest import ABTest
 from models.Audience import Audience
 from models.RemoteConfig import RemoteConfig
-from models.RemoteConfigOverride import RemoteConfigOverride
 from models.UserABTest import UserABTest
 
 
 dynamodb = boto3.resource("dynamodb")
 
 
-def handler(event: dict, context: dict):
+def handler(event: dict[str, Any], context: dict[str, Any]):
     """
     lambda handler
     """
@@ -30,16 +32,24 @@ def handler(event: dict, context: dict):
     if not remote_configs:
         return result
 
-    user_audiences = []
+    user_audiences: list[Audience] = []
     user_audiences.extend(Audience.event_based_audiences(dynamodb, user_ID))
     user_audiences.extend(Audience.property_based_audiences(dynamodb, payload))
+    user_audience_names = [audience.audience_name for audience in user_audiences] + [
+        "ALL"
+    ]
 
     for remote_config in remote_configs:
-        overrides = RemoteConfigOverride.filter_audiences(
-            dynamodb, remote_config.remote_config_name, user_audiences
-        )
+        # First, we search if there is an active override that matches with user audiences.
+        user_audience = None
+        user_override = None
+        for audience_name, override in remote_config.overrides.items():
+            if override.active and audience_name in user_audience_names:
+                user_audience = audience_name
+                user_override = override
+                break
 
-        if not overrides:
+        if not user_audience or not user_override:
             # RemoteConfig has no Override or there is no audience that matches the user
             result[remote_config.remote_config_name] = {
                 "value": remote_config.reference_value,
@@ -47,19 +57,17 @@ def handler(event: dict, context: dict):
             }
             continue
 
-        # If there are several overrides, it is due to an inconsistency in analytical decisions
-        # So we take the first override
-        override = next(iter(overrides))
-
-        if override.override_type == "fixed":
+        if user_override.override_type == "fixed":
             result[remote_config.remote_config_name] = {
-                "value": override.override_value,
+                "value": user_override.fixed_value,
                 "value_origin": "reference_value",
             }
             continue
 
         # override_type == abtest
-        abtest = ABTest(dynamodb, override.override_value)
+        abtest = ABTest(
+            remote_config.remote_config_name, user_audience, user_override.abtest_value
+        )
         user_abtest = UserABTest(dynamodb, user_ID, abtest)
 
         if not user_abtest.exists:
@@ -71,3 +79,17 @@ def handler(event: dict, context: dict):
         }
 
     return result
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Exit... Missing `applicationId` and `userId`")
+        sys.exit(1)
+
+    event = {
+        "applicationId": sys.argv[1],
+        "country": "FR",
+        "payload": {"developer_device_id": "NA"},
+        "userId": sys.argv[2],
+    }
+    print(handler(event, {}))

@@ -3,7 +3,6 @@ This module contains Audience class.
 """
 from typing import Any, List
 
-from boto3.dynamodb.conditions import Key
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from utils import constants
@@ -17,8 +16,8 @@ class Audience:
     __types = ("event_based", "property_based")
 
     def __init__(self, database: DynamoDBServiceResource, data: dict[str, Any]):
-        self.__assert_data(data)
         self.__database = database
+        self.__assert_data(data)
         self.__data = data
 
     @classmethod
@@ -38,20 +37,8 @@ class Audience:
         """
         This static method returns all audiences.
         """
-        response = database.Table(constants.TABLE_AUDIENCES).query(
-            IndexName="type-index", KeyConditionExpression=Key("type").eq("event_based")
-        )
+        response = database.Table(constants.TABLE_AUDIENCES).scan()
         return [Audience(database, item) for item in response["Items"]]
-
-    @staticmethod
-    def exists(database: DynamoDBServiceResource, audience_name: str) -> bool:
-        """
-        This property returns True if Audience exists, else False.
-        """
-        response = database.Table(constants.TABLE_AUDIENCES).query(
-            KeyConditionExpression=Key("audience_name").eq(audience_name)
-        )
-        return len(response["Items"]) > 0 or audience_name == "ALL"
 
     @property
     def audience_name(self) -> str:
@@ -109,10 +96,11 @@ class Audience:
         )
 
     def __assert_data(self, data: dict[str, Any]):
-        audience_name = data["audience_name"]
-        condition = data["condition"]
-        description = data["description"]
-        audience_type = data["type"]
+        data = data.copy()
+        audience_name = data.pop("audience_name")
+        condition = data.pop("condition")
+        description = data.pop("description")
+        audience_type = data.pop("type")
 
         assert (
             isinstance(audience_name, str) and audience_name != ""
@@ -122,3 +110,5 @@ class Audience:
         ), "`condition_value` should be non-empty string"
         assert isinstance(description, str), "`description` should be string"
         assert audience_type in self.__types, f"`type` should be in {self.__types}"
+
+        assert len(data) == 0, f"Unexpected fields -> {data.keys()}"

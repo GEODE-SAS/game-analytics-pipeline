@@ -17,7 +17,7 @@ dynamodb = boto3.resource("dynamodb")
 secrets_manager = boto3.client("secretsmanager")
 
 
-def handler(event: dict, context: dict):
+def handler(event: dict[str, Any], context: dict[str, Any]):
     """
     lambda handler
     """

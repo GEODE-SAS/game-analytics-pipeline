@@ -20,7 +20,7 @@ class UserABTest:
         self.__dynamodb = dynamodb
 
         response = dynamodb.Table(constants.USERS_ABTESTS_TABLE).get_item(
-            Key={"uid": uid, "abtest_name": abtest.abtest_name}
+            Key={"uid": uid, "abtest_ID": abtest.ID}
         )
         if item := response.get("Item"):
             self.__data = item
@@ -65,7 +65,7 @@ class UserABTest:
         self.__dynamodb.Table(constants.USERS_ABTESTS_TABLE).put_item(
             Item={
                 "uid": self.__uid,
-                "abtest_name": self.__abtest.abtest_name,
+                "abtest_ID": self.__abtest.ID,
                 "is_in_test": self.is_in_test,
                 "value": self.value,
             }

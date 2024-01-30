@@ -1,4 +1,4 @@
-# This script is used to run analytics-backoffice REST API locally
+# This script is used to run remote-configs lambda locally
 
 BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
 export PROJECT_NAME="geode-analytics"
@@ -14,6 +14,11 @@ else
     export GEODE_ENVIRONMENT="sandbox"
 fi
 
+export AUDIENCES_TABLE="$PROJECT_NAME-$GEODE_ENVIRONMENT-audiences"
+export REMOTE_CONFIGS_TABLE="$PROJECT_NAME-$GEODE_ENVIRONMENT-remote-configs"
+export USERS_ABTESTS_TABLE="$PROJECT_NAME-$GEODE_ENVIRONMENT-users-abtests"
+export USERS_AUDIENCES_TABLE="$PROJECT_NAME-$GEODE_ENVIRONMENT-users-audiences"
+
 if [ ! -d .venv ]; then
     echo "Virtual environment creation processing...\n"
     python3.11 -m venv .venv --upgrade-deps
@@ -28,4 +33,4 @@ if ! cmp -s requirements.txt .venv/requirements.txt; then
     cp requirements.txt .venv/requirements.txt
 fi
 
-python main.py
+python main.py $@

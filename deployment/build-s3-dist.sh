@@ -156,6 +156,12 @@ cd $source_dir/services/crash-report
 build_python_lambda "crash-report"
 
 echo "------------------------------------------------------------------------------"  
+echo "Packaging Lambda Function - Datavault Backup service"  
+echo "------------------------------------------------------------------------------"  
+cd $source_dir/services/datavault-backup
+build_python_lambda "datavault-backup"
+
+echo "------------------------------------------------------------------------------"  
 echo "Completed building distribution"
 echo "------------------------------------------------------------------------------" 
 

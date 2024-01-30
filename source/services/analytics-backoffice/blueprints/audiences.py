@@ -6,7 +6,7 @@ from flask import Blueprint, current_app, jsonify, request
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from models.Audience import Audience
-from models.RemoteConfigOverride import RemoteConfigOverride
+from models.RemoteConfig import RemoteConfig
 
 
 audiences_endpoints = Blueprint("audiences_endpoints", __name__)
@@ -54,16 +54,10 @@ def delete_audience(audience_name: str):
             400,
         )
 
-    remote_configs_overrides = RemoteConfigOverride.from_audience_name(
-        database, audience_name
-    )
-    if len(remote_configs_overrides) > 0:
-        return (
-            jsonify(
-                error="You can NOT delete audience : it used in Remote Config Overrides"
-            ),
-            400,
-        )
+    try:
+        RemoteConfig.purge_from_audience(database, audience_name)
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
 
     audience.delete()
     return jsonify(), 204

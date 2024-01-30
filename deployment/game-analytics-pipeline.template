@@ -227,10 +227,8 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          ABTESTS_TABLE: !Ref ABTestsTable
           AUDIENCES_TABLE: !Ref AudiencesTable
           REMOTE_CONFIGS_TABLE: !Ref RemoteConfigsTable
-          REMOTE_CONFIGS_OVERRIDES_TABLE: !Ref RemoteConfigsOverridesTable
           USERS_ABTESTS_TABLE: !Ref UsersABTestsTable
           USERS_AUDIENCES_TABLE: !Ref UsersAudiencesTable
           CACHE_TIMEOUT_SECONDS: 60
@@ -256,14 +254,10 @@ Resources:
               - dynamodb:Query
               - dynamodb:Scan
             Resource:
-              - !GetAtt ABTestsTable.Arn
-              - !Sub ${ABTestsTable.Arn}/index/*
               - !GetAtt RemoteConfigsTable.Arn
               - !Sub ${RemoteConfigsTable.Arn}/index/*
               - !GetAtt AudiencesTable.Arn
               - !Sub ${AudiencesTable.Arn}/index/*
-              - !GetAtt RemoteConfigsOverridesTable.Arn
-              - !Sub ${RemoteConfigsOverridesTable.Arn}/index/*
               - !GetAtt UsersABTestsTable.Arn
               - !Sub ${UsersABTestsTable.Arn}/index/*
               - !GetAtt UsersAudiencesTable.Arn
@@ -617,6 +611,108 @@ Resources:
               Dimensions:
                 - Name: FunctionName
                   Value: !Ref CrashReportFunction
+              MetricName: Errors
+              Namespace: AWS/Lambda
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      Threshold: 1
+      TreatMissingData: notBreaching
+
+  DatavaultBackupFunction:
+    Type: AWS::Serverless::Function
+    Condition: ConfigureProdMode
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-DatavaultBackupFunction'
+      Handler: main.handler
+      Description: 'Function that backups Datavault to s3'
+      Runtime: python3.11
+      CodeUri: 
+        Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
+        Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"], "datavault-backup.zip"]]
+      Timeout: 300
+      MemorySize: 256
+      Environment:
+        Variables:
+          TENJIN_DATAVAULT_BUCKET: !Ref TenjinDatavaultBucket
+      Events:
+        CrashReport:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [JobScheduleSettings, ScheduledJobIntervals, EveryDay]
+      Role: !GetAtt DatavaultBackupRole.Arn
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: 'Solution does not use VPC resources and does not require VPC connectivity'
+
+  DatavaultBackupRole:
+    Type: AWS::IAM::Role
+    Condition: ConfigureProdMode
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-DatavaultBackupRole'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+      - PolicyName: UsersAudiencesPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Sid: CWLogs
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutDestination
+                - logs:PutLogEvents
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
+            - Sid: SecretsManagerAccess
+              Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - '*'
+
+  DatavaultBackupFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: ConfigureProdMode
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DatavaultBackupFunction}'
+      RetentionInDays: !FindInMap [CloudWatchSettings, LogGroup, RetentionInDays]
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: 'CloudWatch Log Groups provide encryption at rest by default using keys managed by AWS'
+
+  DatavaultBackupAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: ConfigureProdMode
+    Properties:
+      AlarmActions:
+        - !Ref Notifications
+      AlarmDescription: !Sub 'Lambda Error Alarm for stack ${AWS::StackName}'
+      ComparisonOperator: GreaterThanThreshold
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: s1
+          Expression: m1
+        - Id: m1
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DatavaultBackupFunction
               MetricName: Errors
               Namespace: AWS/Lambda
             Period: 300
@@ -1027,7 +1123,39 @@ Resources:
             NoncurrentVersionTransitions:
               - StorageClass: STANDARD_IA
                 TransitionInDays: 30
-  
+
+  TenjinDatavaultBucket:
+    Type: AWS::S3::Bucket
+    Condition: ConfigureProdMode
+    DeletionPolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName: !Sub '${AWS::StackName}-tenjin-datavault'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      LifecycleConfiguration:
+        Rules:
+          - Id: glacier-deep-archive-transition
+            Transitions:
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 0
+            Prefix: partitioned-tables
+            Status: Enabled
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W51
+            reason: 'S3 Bucket Policy not needed; this is a private bucket that should only be accessed by the resources defined in the template, which have IAM permissions defined to access. For additional permissions customers can define them on the bucket after launch'
+
   ##########
   # Athena #
   ##########
@@ -1128,6 +1256,8 @@ Resources:
             - Name: app_info
               Type: string
             - Name: user
+              Type: string
+            - Name: attribution
               Type: string
             - Name: device
               Type: string
@@ -1729,89 +1859,6 @@ Resources:
         SSEEnabled: true
         SSEType: KMS
 
-  ABTestsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      DeletionProtectionEnabled: true
-      TableName: !Sub '${AWS::StackName}-abtests'
-      AttributeDefinitions:
-        - AttributeName: abtest_name
-          AttributeType: S
-      KeySchema:
-        - AttributeName: abtest_name
-          KeyType: HASH
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-
-  RemoteConfigsOverridesTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      DeletionProtectionEnabled: true
-      TableName: !Sub '${AWS::StackName}-remote-configs-overrides'
-      AttributeDefinitions:
-        - AttributeName: remote_config_name
-          AttributeType: S
-        - AttributeName: audience_name
-          AttributeType: S
-        - AttributeName: override_type
-          AttributeType: S
-        - AttributeName: active
-          AttributeType: N
-      KeySchema:
-        - AttributeName: remote_config_name
-          KeyType: HASH
-        - AttributeName: audience_name
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        - IndexName: remote_config_name-active-index
-          KeySchema:
-            - AttributeName: remote_config_name
-              KeyType: HASH
-            - AttributeName: active
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: audience_name-index
-          KeySchema:
-            - AttributeName: audience_name
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: override_type-index
-          KeySchema:
-            - AttributeName: override_type
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-
-  RemoteConfigsOverridesHistoryTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      DeletionProtectionEnabled: true
-      TableName: !Sub '${AWS::StackName}-remote-configs-overrides-history'
-      AttributeDefinitions:
-        - AttributeName: ID
-          AttributeType: S
-      KeySchema:
-        - AttributeName: ID
-          KeyType: HASH
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-
   UsersABTestsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1821,17 +1868,17 @@ Resources:
       AttributeDefinitions:
         - AttributeName: uid
           AttributeType: S
-        - AttributeName: abtest_name
+        - AttributeName: abtest_ID
           AttributeType: S
       KeySchema:
         - AttributeName: uid
           KeyType: HASH
-        - AttributeName: abtest_name
+        - AttributeName: abtest_ID
           KeyType: RANGE
       GlobalSecondaryIndexes:
-      - IndexName: abtest_name-index
+      - IndexName: abtest_ID-index
         KeySchema:
-          - AttributeName: abtest_name
+          - AttributeName: abtest_ID
             KeyType: HASH
         Projection:
           ProjectionType: INCLUDE
@@ -2672,6 +2719,9 @@ Resources:
                 remote_config:
                   type: object
                   description: JSON object detailing player's A/B test groups
+                attribution:
+                  type: object
+                  description: JSON object detailing player's attribution
                 event_data:
                   type: object
           securitySchemes:
