@@ -125,6 +125,7 @@ class RemoteConfig:
         """
         This method deletes remote config from database.
         """
+        self.__purge_users_abtests(all_abtests=True)
         self.__database.Table(constants.TABLE_REMOTE_CONFIGS).delete_item(
             Key={"remote_config_name": self.remote_config_name}
         )
@@ -139,19 +140,7 @@ class RemoteConfig:
         """
         This method creates RemoteConfig in database.
         """
-        # Check if an ABTest override has been deleted
-        if remote_config := RemoteConfig.from_database(
-            self.__database, self.remote_config_name
-        ):
-            for audience_name, override in remote_config.overrides.items():
-                if override.override_type != "abtest":
-                    continue
-                if audience_name not in self.overrides:
-                    # This ABTest has been deleted
-                    ABTest.purge_users_abtests(
-                        self.__database, self.remote_config_name, audience_name
-                    )
-
+        self.__purge_users_abtests()
         self.__database.Table(constants.TABLE_REMOTE_CONFIGS).put_item(
             Item={
                 "remote_config_name": self.remote_config_name,
@@ -198,3 +187,23 @@ class RemoteConfig:
             assert isinstance(override, dict), "`overrides` should be dict[str, dict]"
 
         assert len(data) == 0, f"Unexpected fields -> {data.keys()}"
+
+    def __purge_users_abtests(self, all_abtests: bool = False):
+        """
+        `all_abtests` should be True if the remote config will be entierly deleted.
+        """
+        # Check if an ABTest override has been deleted
+        print("go")
+        if remote_config := RemoteConfig.from_database(
+            self.__database, self.remote_config_name
+        ):
+            print(remote_config.overrides)
+            for audience_name, override in remote_config.overrides.items():
+                if override.override_type != "abtest":
+                    continue
+                if all_abtests or audience_name not in self.overrides:
+                    print("purge")
+                    # This ABTest has been deleted
+                    ABTest.purge_users_abtests(
+                        self.__database, self.remote_config_name, audience_name
+                    )
