@@ -156,6 +156,12 @@ class Event {
         }
         if(event.hasOwnProperty('attribution')){
           transformed_event.attribution = event.attribution;
+        } else {
+          // This field not exists in UserAppStates for these versions :
+          // CoeurDeGem : 3.1.3 and below
+          // Dazzly : 1.2.1 and below
+          // DazzlyMatch : 1.4.0 and below
+          transformed_event.attribution = {};
         }
         if(event.hasOwnProperty('event_data')){
           transformed_event.event_data = event.event_data;
@@ -228,6 +234,12 @@ class Event {
         }
         if(event.hasOwnProperty('attribution')){
           unregistered_format.attribution = event.attribution;
+        } else {
+          // This field not exists in UserAppStates for these versions :
+          // CoeurDeGem : 3.1.3 and below
+          // Dazzly : 1.2.1 and below
+          // DazzlyMatch : 1.4.0 and below
+          unregistered_format.attribution = {};
         }
         
         return Promise.resolve({
@@ -371,6 +383,7 @@ class Event {
         user_id: event.user.user_id,
         application_id: applicationId,
         app_info: JSON.stringify(event.app_info),
+        attribution: JSON.stringify(event.attribution),
         device: JSON.stringify(event.device),
         game_time: event.game_time,
         remote_config: JSON.stringify(event.remote_config),
