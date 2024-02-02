@@ -6,6 +6,7 @@ from time import sleep
 
 from typing import Any, List
 
+from boto3.dynamodb.conditions import Attr
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 from mypy_boto3_athena import AthenaClient
 
@@ -45,6 +46,21 @@ class Application:
             return cls(athena, item.pop("application_id"), item)
 
     @staticmethod
+    def application_IDs_to_tags(
+        database: DynamoDBServiceResource, application_IDs: list[str]
+    ) -> list[str]:
+        """
+        This staticmethod returns a list of Application that match the <tags>.
+        """
+        if not application_IDs:
+            return []
+
+        response = database.Table(constants.TABLE_APPLICATIONS).scan(
+            FilterExpression=Attr("application_id").is_in(application_IDs)
+        )
+        return sorted(set(item["tag"] for item in response["Items"]))
+
+    @staticmethod
     def exists(database: DynamoDBServiceResource, application_ID: str) -> bool:
         """
         This property returns True if Application exists, else False.
@@ -66,6 +82,21 @@ class Application:
             Application(athena, item.pop("application_id"), item)
             for item in response["Items"]
         ]
+
+    @staticmethod
+    def tags_to_application_IDs(
+        database: DynamoDBServiceResource, tags: list[str]
+    ) -> list[str]:
+        """
+        This staticmethod returns a list of Application that match the <tags>.
+        """
+        if not tags:
+            return []
+
+        response = database.Table(constants.TABLE_APPLICATIONS).scan(
+            FilterExpression=Attr("tag").is_in(tags)
+        )
+        return [item["application_id"] for item in response["Items"]]
 
     @property
     def application_name(self) -> str:

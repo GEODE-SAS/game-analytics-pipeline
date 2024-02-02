@@ -6,7 +6,6 @@ from typing import Any, List
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from models.ABTest import ABTest
-from models.Application import Application
 from models.Audience import Audience
 from models.RemoteConfigOverride import RemoteConfigOverride
 from utils import constants
@@ -175,10 +174,7 @@ class RemoteConfig:
         for application_ID in application_IDs:
             assert (
                 application_ID != ""
-            ), "`application_IDs` should be a list of non-empty string"
-            assert Application.exists(
-                self.__database, application_ID
-            ), f"`There is no application with ID : {application_ID}`"
+            ), "`applications` should be a list of non-empty string"
 
         for audience_name, override in overrides.items():
             assert audience_name == "ALL" or Audience.from_database(
@@ -193,16 +189,13 @@ class RemoteConfig:
         `all_abtests` should be True if the remote config will be entierly deleted.
         """
         # Check if an ABTest override has been deleted
-        print("go")
         if remote_config := RemoteConfig.from_database(
             self.__database, self.remote_config_name
         ):
-            print(remote_config.overrides)
             for audience_name, override in remote_config.overrides.items():
                 if override.override_type != "abtest":
                     continue
                 if all_abtests or audience_name not in self.overrides:
-                    print("purge")
                     # This ABTest has been deleted
                     ABTest.purge_users_abtests(
                         self.__database, self.remote_config_name, audience_name
