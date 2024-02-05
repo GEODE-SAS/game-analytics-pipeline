@@ -23,6 +23,7 @@ const _ = require('underscore');
 const moment = require('moment');
 const event_schema = require('../config/event_schema.json');
 const Ajv2020 = require('ajv/dist/2020');
+const { v4: uuidv4 } = require('uuid');
 
 const ajv = new Ajv2020();
 var validate = ajv.compile(event_schema);
@@ -149,6 +150,13 @@ class Event {
           }
         }
         if(event.hasOwnProperty('device')){
+          if (!event.device.hasOwnProperty('analytics_installation_id')) {
+            // This field exists in UserAppStates for these versions :
+            // CoeurDeGem : 3.1.4 and above
+            // Dazzly : 1.4.0 and above
+            // DazzlyMatch : 1.4.0 and above
+            event.device.analytics_installation_id = uuidv4();
+          }
           transformed_event.device = event.device;
         }
         if(event.hasOwnProperty('remote_config')){
