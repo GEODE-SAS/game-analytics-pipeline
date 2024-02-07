@@ -181,7 +181,7 @@ class Event {
         
         transformed_event.application_name = String(application.application_name);
 
-        if (transformed_event.event_name == "session_start") {
+        if (["app_update", "session_start"].includes(transformed_event.event_name)) {
           await _self.setUserAppState(transformed_event, applicationId)
         }
 
