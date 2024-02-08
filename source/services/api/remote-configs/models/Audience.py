@@ -8,6 +8,9 @@ from typing import Any, List
 from boto3.dynamodb.conditions import Key
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
+# Warning : packaging is used by eval()
+from packaging.version import Version  # pylint: disable = unused-import
+
 from utils import constants
 
 
