@@ -1,6 +1,7 @@
 """
 Lambda handler
 """
+
 import sys
 from typing import Any
 
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     event = {
         "applicationId": sys.argv[1],
         "country": "FR",
-        "payload": {"developer_device_id": "NA"},
+        "payload": {},
         "userId": sys.argv[2],
     }
     print(handler(event, {}))

@@ -1,6 +1,8 @@
 """
 This module contains Audience class.
 """
+
+import contextlib
 from typing import Any, List
 
 from boto3.dynamodb.conditions import Key
@@ -51,8 +53,10 @@ class Audience:
             for parameter_name, parameter_value in user_data.items():
                 expression = expression.replace(parameter_name, f"'{parameter_value}'")
 
-            if eval(expression) is True:  # pylint: disable=eval-used
-                audiences.append(Audience(item["audience_name"]))
+            with contextlib.suppress(NameError):
+                # eval() raises NameError if parameter in expression not in user_data
+                if eval(expression) is True:  # pylint: disable=eval-used
+                    audiences.append(Audience(item["audience_name"]))
 
         return audiences
 
