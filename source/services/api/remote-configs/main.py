@@ -33,9 +33,11 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
     if not remote_configs:
         return result
 
+    # Audience Priority : "developer", "property_based", "event_based", "ALL"
     user_audiences: list[Audience] = []
-    user_audiences.extend(Audience.event_based_audiences(dynamodb, user_ID))
+    user_audiences.extend(Audience.developer_audiences(dynamodb, payload))
     user_audiences.extend(Audience.property_based_audiences(dynamodb, payload))
+    user_audiences.extend(Audience.event_based_audiences(dynamodb, user_ID))
     user_audience_names = [audience.audience_name for audience in user_audiences] + [
         "ALL"
     ]
@@ -44,8 +46,13 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
         # First, we search if there is an active override that matches with user audiences.
         user_audience = None
         user_override = None
-        for audience_name, override in remote_config.overrides.items():
-            if override.active and audience_name in user_audience_names:
+
+        for audience_name in user_audience_names:
+            override = remote_config.overrides.get(audience_name)
+            if not override:
+                continue
+
+            if override.active:
                 user_audience = audience_name
                 user_override = override
                 break

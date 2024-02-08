@@ -23,6 +23,19 @@ class Audience:
         self.__audience_name = audience_name
 
     @staticmethod
+    def developer_audiences(
+        dynamodb: DynamoDBServiceResource, user_data: dict[str, Any]
+    ) -> List["Audience"]:
+        """
+        This static method returns a list of all property_based Audiences for uid.
+        """
+        response = dynamodb.Table(constants.AUDIENCES_TABLE).query(
+            IndexName="type-index",
+            KeyConditionExpression=Key("type").eq("developer"),
+        )
+        return Audience.__extract_audience_from_condition(response["Items"], user_data)
+
+    @staticmethod
     def event_based_audiences(
         dynamodb: DynamoDBServiceResource, uid: str
     ) -> List["Audience"]:
@@ -38,8 +51,7 @@ class Audience:
 
     @staticmethod
     def property_based_audiences(
-        dynamodb: DynamoDBServiceResource,
-        user_data: dict[str, Any],
+        dynamodb: DynamoDBServiceResource, user_data: dict[str, Any]
     ) -> List["Audience"]:
         """
         This static method returns a list of all property_based Audiences for uid.
@@ -49,8 +61,21 @@ class Audience:
             KeyConditionExpression=Key("type").eq("property_based"),
         )
 
+        return Audience.__extract_audience_from_condition(response["Items"], user_data)
+
+    @property
+    def audience_name(self) -> str:
+        """
+        This property returns audience_name.
+        """
+        return self.__audience_name
+
+    @staticmethod
+    def __extract_audience_from_condition(
+        items: list[dict[str, Any]], user_data: dict[str, Any]
+    ):
         audiences = []
-        for item in response["Items"]:
+        for item in items:
             expression: str = item["condition"]
 
             for parameter_name, parameter_value in user_data.items():
@@ -62,10 +87,3 @@ class Audience:
                     audiences.append(Audience(item["audience_name"]))
 
         return audiences
-
-    @property
-    def audience_name(self) -> str:
-        """
-        This property returns audience_name.
-        """
-        return self.__audience_name
