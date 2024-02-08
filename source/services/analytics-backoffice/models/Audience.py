@@ -1,6 +1,7 @@
 """
 This module contains Audience class.
 """
+
 from typing import Any, List
 
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
@@ -13,7 +14,7 @@ class Audience:
     This class represents an Audience.
     """
 
-    __types = ("event_based", "property_based")
+    __types = ("developer", "event_based", "property_based")
 
     def __init__(self, database: DynamoDBServiceResource, data: dict[str, Any]):
         self.__database = database
@@ -55,11 +56,11 @@ class Audience:
         return self.__data["condition"]
 
     @property
-    def description(self) -> str:
+    def created_by(self) -> str:
         """
-        This method returns description.
+        This method returns created_by.
         """
-        return self.__data["description"]
+        return self.__data["created_by"]
 
     @property
     def type(self) -> str:
@@ -90,7 +91,7 @@ class Audience:
             Item={
                 "audience_name": self.audience_name,
                 "condition": self.condition,
-                "description": self.description,
+                "created_by": self.created_by,
                 "type": self.type,
             }
         )
@@ -99,7 +100,7 @@ class Audience:
         data = data.copy()
         audience_name = data.pop("audience_name")
         condition = data.pop("condition")
-        description = data.pop("description")
+        created_by = data.pop("created_by")
         audience_type = data.pop("type")
 
         assert (
@@ -108,7 +109,7 @@ class Audience:
         assert (
             isinstance(condition, str) and audience_name != ""
         ), "`condition_value` should be non-empty string"
-        assert isinstance(description, str), "`description` should be string"
+        assert isinstance(created_by, str), "`created_by` should be non-empty string"
         assert audience_type in self.__types, f"`type` should be in {self.__types}"
 
         assert len(data) == 0, f"Unexpected fields -> {data.keys()}"
