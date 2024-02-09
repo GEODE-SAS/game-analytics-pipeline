@@ -1,2 +1,3 @@
 boto3==1.34.6
 boto3-stubs[dynamodb] # boto3 local typing
+packaging==23.2
