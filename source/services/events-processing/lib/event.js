@@ -165,8 +165,8 @@ class Event {
         if(event.hasOwnProperty('attribution')){
           transformed_event.attribution = event.attribution;
         } else {
-          // This field not exists in UserAppStates for these versions :
-          // CoeurDeGem : 3.1.3 and below
+          // This field not exists in UserAppStates for these versions:
+          // CoeurDeGem : 3.1.2 and below
           // Dazzly : 1.2.1 and below
           // DazzlyMatch : 1.4.0 and below
           transformed_event.attribution = {};
@@ -180,6 +180,22 @@ class Event {
         }
         
         transformed_event.application_name = String(application.application_name);
+
+        if (transformed_event.device.advertising_id == "00000000-0000-0000-0000-000000000000" && transformed_event.attribution.hasOwnProperty("advertising_id")) {
+          // Sometimes, device.advertising_id was dummy UID for there versions:
+          // CoeurDeGem : 3.1.2 and below
+          // Dazzly (only android) : 1.4.0 and below
+          // DazzlyMatch : 1.5.1 and below
+          transformed_event.device.advertising_id = transformed_event.attribution.advertising_id
+          transformed_event.device.is_limiting_ad_tracking = false
+        }
+
+        // On older versions of Dazzly iOS, is_limiting_ad_tracking was String
+        if (transformed_event.device.is_limiting_ad_tracking === "0") {
+          transformed_event.device.is_limiting_ad_tracking = false
+        } else if (transformed_event.device.is_limiting_ad_tracking === "1") {
+          transformed_event.device.is_limiting_ad_tracking = true
+        }
 
         if (["app_update", "session_start"].includes(transformed_event.event_name)) {
           await _self.setUserAppState(transformed_event, applicationId)
