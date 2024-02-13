@@ -1092,6 +1092,12 @@ Resources:
             NoncurrentVersionTransitions:
               - StorageClass: INTELLIGENT_TIERING
                 TransitionInDays: 7
+          - Id: DeleteAthenaQueryResults
+            Prefix: 'athena-query-results/'
+            Status: Enabled
+            ExpirationInDays: 7
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
     Metadata:
       cfn_nag:
         rules_to_suppress:
