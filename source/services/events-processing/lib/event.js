@@ -186,6 +186,8 @@ class Event {
           // CoeurDeGem : 3.1.2 and below
           // Dazzly (only android) : 1.4.0 and below
           // DazzlyMatch : 1.5.1 and below
+          // Tenjin never gives a DUMMY UID, when Tenjin doesn't have access to the advertising_id, the field is simply not present in attribution.
+          // So if there is the transform_event.attribution.advertising_id field, then Tenjin must have succeeded in recovering it --> We can track user
           transformed_event.device.advertising_id = transformed_event.attribution.advertising_id
           transformed_event.device.is_limiting_ad_tracking = false
         }
