@@ -4,6 +4,7 @@ This module contains FlaskApp class.
 
 import contextlib
 from decimal import Decimal
+import os
 
 import boto3
 import flask
@@ -45,7 +46,9 @@ class FlaskApp(Flask):
 
         self.config["athena"] = boto3.client("athena")
         self.config["database"] = boto3.resource("dynamodb")
-        self.config["prod_database"] = boto3.resource("dynamodb")
+        self.config["prod_database"] = boto3.resource(
+            "dynamodb", region_name=os.environ["PROD_REGION"]
+        )
 
         @self.after_request
         def after_request(response: wrappers.Response):

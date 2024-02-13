@@ -4,42 +4,42 @@ This module contains Audience class.
 
 from typing import Any, List
 
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
-
+from FlaskApp import current_app
 from utils import constants
 
 
 class Audience:
     """
     This class represents an Audience.
+    Warning : We use only prod_database. (In Sandbox, prod_database = sandbox_database)
     """
 
     __types = ("developer", "event_based", "property_based")
 
-    def __init__(self, database: DynamoDBServiceResource, data: dict[str, Any]):
-        self.__database = database
+    def __init__(self, data: dict[str, Any]):
         self.__assert_data(data)
         self.__data = data
 
     @classmethod
-    def from_database(cls, database: DynamoDBServiceResource, audience_name: str):
+    def from_database(cls, audience_name: str):
         """
         This method creates an instance of Audience from audience_name by fetching database.
         It returns None if there is no Audience with this audience_name.
         """
-        response = database.Table(constants.TABLE_AUDIENCES).get_item(
+        response = Audience.__table_audiences().get_item(
             Key={"audience_name": audience_name}
         )
         if item := response.get("Item"):
-            return cls(database, item)
+            return cls(item)
 
     @staticmethod
-    def get_all(database: DynamoDBServiceResource) -> List["Audience"]:
+    def get_all() -> List["Audience"]:
         """
         This static method returns all audiences.
         """
-        response = database.Table(constants.TABLE_AUDIENCES).scan()
-        return [Audience(database, item) for item in response["Items"]]
+        print(Audience.__table_audiences())
+        response = Audience.__table_audiences().scan()
+        return [Audience(item) for item in response["Items"]]
 
     @property
     def audience_name(self) -> str:
@@ -73,7 +73,7 @@ class Audience:
         """
         This method deletes audience from database.
         """
-        self.__database.Table(constants.TABLE_AUDIENCES).delete_item(
+        Audience.__table_audiences().delete_item(
             Key={"audience_name": self.audience_name}
         )
 
@@ -87,7 +87,7 @@ class Audience:
         """
         This method updates RemoteConfigCondition to database.
         """
-        self.__database.Table(constants.TABLE_AUDIENCES).put_item(
+        Audience.__table_audiences().put_item(
             Item={
                 "audience_name": self.audience_name,
                 "condition": self.condition,
@@ -113,3 +113,7 @@ class Audience:
         assert audience_type in self.__types, f"`type` should be in {self.__types}"
 
         assert len(data) == 0, f"Unexpected fields -> {data.keys()}"
+
+    @staticmethod
+    def __table_audiences():
+        return current_app.prod_database.Table(constants.TABLE_AUDIENCES)

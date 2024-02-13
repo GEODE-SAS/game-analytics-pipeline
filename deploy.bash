@@ -1,85 +1,65 @@
+# Global Config
 PROJECT_NAME="geode-analytics"
 VERSION="2.0.6"
 
-if [ -z $BRANCH_NAME ]; then
-    # Jenkins runs script on git branch in a detached HEAD state.
-    # Jenkins has BRANCH_NAME environment variable
-    export BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
-fi
-
 # Check if we should deployed in China or World project
-IS_CHINA=false
-PROJECT_ENVIRONMENT="WORLD"
+export IS_CHINA=false
 for arg in $@; do
     if [ $arg != "--china" ]; then
         echo "Exit : Unknown tag $arg"
         exit 1
     fi
-    IS_CHINA=true
-    PROJECT_ENVIRONMENT="CHINA"
+    export IS_CHINA=true
 done
 
-echo "Game Analytics Pipeline will deployed in $PROJECT_ENVIRONMENT project !\n"
-
-PARAMETER_OVERRIDES=""
+export BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
 if [ $BRANCH_NAME = "master" ]; then
-    export AWS_PROFILE=prod
-    AWS_REGION="us-east-1"
-    ENVIRONMENT="prod"
-    GEODE_DOMAIN_NAME="api.geode.com"
+    export GEODE_ENVIRONMENT="prod"
     PARAMETER_OVERRIDES="--parameter-overrides SolutionAdminEmailAddress=florent@geode.com KinesisStreamShards=5 SolutionMode=Prod"
-    if $IS_CHINA; then
-        export AWS_PROFILE=prod-china
-        AWS_REGION="cn-north-1"
-        GEODE_DOMAIN_NAME="cn-api.geode.com"
-    fi
 elif [ $BRANCH_NAME = "dev" ]; then
-    export AWS_PROFILE=dev
-    AWS_REGION="eu-west-3"
-    ENVIRONMENT="dev"
-    GEODE_DOMAIN_NAME="apidev.geode.com"
+    export GEODE_ENVIRONMENT="dev"
     PARAMETER_OVERRIDES="--parameter-overrides SolutionAdminEmailAddress=florent@geode.com"
-    if $IS_CHINA; then
-        export AWS_PROFILE=dev-china
-        AWS_REGION="cn-northwest-1"
-        GEODE_DOMAIN_NAME="cn-apidev.geode.com"
-    fi
 else
-    export AWS_PROFILE=sandbox
-    AWS_REGION="eu-west-2"
-    ENVIRONMENT="sandbox"
-    if $IS_CHINA; then
-        export AWS_PROFILE=sandbox-china
-        AWS_REGION="cn-northwest-1"
-    fi
+    export GEODE_ENVIRONMENT="sandbox"
+    PARAMETER_OVERRIDES=""
 fi
 
+echo "Game Analytics Pipeline will deployed project ! (ENVIRONMENT == $GEODE_ENVIRONMENT && CHINA == $IS_CHINA)\n"
+
+export AWS_PROFILE=$GEODE_ENVIRONMENT
+if $IS_CHINA; then
+    export AWS_PROFILE=$AWS_PROFILE-china
+fi
+
+GEODE_AWS_REGION=$(aws configure get region --profile $AWS_PROFILE)
+
 DIST_OUTPUT_BUCKET="$PROJECT_NAME-output-bucket"
-STACK_NAME="$PROJECT_NAME-$ENVIRONMENT"
+STACK_NAME="$PROJECT_NAME-$GEODE_ENVIRONMENT"
+SOLUTION_NAME="analytics/$GEODE_ENVIRONMENT"
 
 # Run following command only the first time to create output bucket.
-aws s3 mb s3://$DIST_OUTPUT_BUCKET-$AWS_REGION --region $AWS_REGION 2> /dev/null
+aws s3 mb s3://$DIST_OUTPUT_BUCKET-$GEODE_AWS_REGION --region $GEODE_AWS_REGION 2> /dev/null
 
 cd ./deployment
 
 # Build project (Templates + Lambdas)
-./build-s3-dist.sh $DIST_OUTPUT_BUCKET analytics/$ENVIRONMENT $VERSION
+./build-s3-dist.sh $DIST_OUTPUT_BUCKET $SOLUTION_NAME $VERSION
 
 # Store Global Assets to S3 (Templates)
-aws s3 cp ./global-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/analytics/$ENVIRONMENT/$VERSION --recursive --acl bucket-owner-full-control
+aws s3 cp ./global-s3-assets s3://$DIST_OUTPUT_BUCKET-$GEODE_AWS_REGION/$SOLUTION_NAME/$VERSION --recursive --acl bucket-owner-full-control
 
 # Store Regional Assets to S3 (Lambdas)
-aws s3 cp ./regional-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/analytics/$ENVIRONMENT/$VERSION --recursive --acl bucket-owner-full-control
+aws s3 cp ./regional-s3-assets s3://$DIST_OUTPUT_BUCKET-$GEODE_AWS_REGION/$SOLUTION_NAME/$VERSION --recursive --acl bucket-owner-full-control
 
 # Deploy Backoffce Remote Config API Gateway (Zappa)
-./deploy-analytics-backoffice.sh $ENVIRONMENT $AWS_REGION $PROJECT_NAME $GEODE_DOMAIN_NAME
+./deploy-analytics-backoffice.sh $PROJECT_NAME
 
 # Deploy CloudFormation by creating/updating Stack
 aws cloudformation deploy \
     --template-file ./global-s3-assets/game-analytics-pipeline.template \
     --stack-name $STACK_NAME \
     --capabilities CAPABILITY_IAM \
-    --s3-bucket $DIST_OUTPUT_BUCKET-$AWS_REGION \
+    --s3-bucket $DIST_OUTPUT_BUCKET-$GEODE_AWS_REGION \
     --s3-prefix templates \
     --capabilities CAPABILITY_NAMED_IAM \
     $PARAMETER_OVERRIDES

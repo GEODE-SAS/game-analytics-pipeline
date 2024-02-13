@@ -1,10 +1,10 @@
 """
 This module contains RemoteConfig class.
 """
+
 from typing import Any, List
 
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
-
+from FlaskApp import current_app
 from models.ABTest import ABTest
 from models.Audience import Audience
 from models.RemoteConfigOverride import RemoteConfigOverride
@@ -16,8 +16,7 @@ class RemoteConfig:
     This class represents a mobile application configuration that we can manage remotely.
     """
 
-    def __init__(self, database: DynamoDBServiceResource, data: dict[str, Any]):
-        self.__database = database
+    def __init__(self, data: dict[str, Any]):
         self.__assert_data(data)
         self.__data = data
         self.__data["overrides"] = {
@@ -26,32 +25,32 @@ class RemoteConfig:
         }
 
     @classmethod
-    def from_database(cls, database: DynamoDBServiceResource, remote_config_name: str):
+    def from_database(cls, remote_config_name: str):
         """
         This method creates an instance of RemoteConfig by fetching database.
         It returns None if there is no RemoteConfig with <remote_config_name> in database.
         """
-        response = database.Table(constants.TABLE_REMOTE_CONFIGS).get_item(
+        response = RemoteConfig.__table_remote_configs().get_item(
             Key={"remote_config_name": remote_config_name}
         )
         if item := response.get("Item"):
-            return cls(database, item)
+            return cls(item)
 
     @staticmethod
-    def get_all(database: DynamoDBServiceResource) -> List["RemoteConfig"]:
+    def get_all() -> List["RemoteConfig"]:
         """
         This static method returns all remote configs.
         """
-        response = database.Table(constants.TABLE_REMOTE_CONFIGS).scan()
-        return [RemoteConfig(database, item) for item in response["Items"]]
+        response = RemoteConfig.__table_remote_configs().scan()
+        return [RemoteConfig(item) for item in response["Items"]]
 
     @staticmethod
-    def purge_from_audience(database: DynamoDBServiceResource, audience_name: str):
+    def purge_from_audience(audience_name: str):
         """
         This static method purges all overrides related to <audience_name>.
         It raises ValueError if there are active overrides with this audience.
         """
-        remote_configs = RemoteConfig.get_all(database)
+        remote_configs = RemoteConfig.get_all()
 
         # Fisrt, check if there are active overrides with this audience.
         for remote_config in remote_configs:
@@ -70,7 +69,7 @@ class RemoteConfig:
             if not override:
                 continue
 
-            database.Table(constants.TABLE_REMOTE_CONFIGS).update_item(
+            RemoteConfig.__table_remote_configs().update_item(
                 Key={"remote_config_name": remote_config.remote_config_name},
                 UpdateExpression=f"REMOVE overrides.{audience_name}",
             )
@@ -125,7 +124,7 @@ class RemoteConfig:
         This method deletes remote config from database.
         """
         self.__purge_users_abtests(all_abtests=True)
-        self.__database.Table(constants.TABLE_REMOTE_CONFIGS).delete_item(
+        RemoteConfig.__table_remote_configs().delete_item(
             Key={"remote_config_name": self.remote_config_name}
         )
 
@@ -140,7 +139,7 @@ class RemoteConfig:
         This method creates RemoteConfig in database.
         """
         self.__purge_users_abtests()
-        self.__database.Table(constants.TABLE_REMOTE_CONFIGS).put_item(
+        RemoteConfig.__table_remote_configs().put_item(
             Item={
                 "remote_config_name": self.remote_config_name,
                 "applications": self.application_IDs,
@@ -178,7 +177,7 @@ class RemoteConfig:
 
         for audience_name, override in overrides.items():
             assert audience_name == "ALL" or Audience.from_database(
-                self.__database, audience_name
+                audience_name
             ), f"`audience_name` {audience_name} NOT exists"
             assert isinstance(override, dict), "`overrides` should be dict[str, dict]"
 
@@ -189,14 +188,14 @@ class RemoteConfig:
         `all_abtests` should be True if the remote config will be entierly deleted.
         """
         # Check if an ABTest override has been deleted
-        if remote_config := RemoteConfig.from_database(
-            self.__database, self.remote_config_name
-        ):
+        if remote_config := RemoteConfig.from_database(self.remote_config_name):
             for audience_name, override in remote_config.overrides.items():
                 if override.override_type != "abtest":
                     continue
                 if all_abtests or audience_name not in self.overrides:
                     # This ABTest has been deleted
-                    ABTest.purge_users_abtests(
-                        self.__database, self.remote_config_name, audience_name
-                    )
+                    ABTest.purge_users_abtests(self.remote_config_name, audience_name)
+
+    @staticmethod
+    def __table_remote_configs():
+        return current_app.database.Table(constants.TABLE_REMOTE_CONFIGS)

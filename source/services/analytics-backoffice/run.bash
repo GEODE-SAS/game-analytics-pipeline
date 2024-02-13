@@ -3,16 +3,17 @@
 BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
 export PROJECT_NAME="geode-analytics"
 
+export PROD_REGION=$(aws configure get region --profile prod)
 if [ $BRANCH_NAME = "master" ]; then
-    export AWS_PROFILE="prod"
     export GEODE_ENVIRONMENT="prod"
 elif [ $BRANCH_NAME = "dev" ]; then
-    export AWS_PROFILE="dev"
     export GEODE_ENVIRONMENT="dev"
 else
-    export AWS_PROFILE="sandbox"
+    export PROD_REGION=$(aws configure get region --profile sandbox)
     export GEODE_ENVIRONMENT="sandbox"
 fi
+
+export AWS_PROFILE=$GEODE_ENVIRONMENT
 
 if [ ! -d .venv ]; then
     echo "Virtual environment creation processing...\n"

@@ -1,15 +1,14 @@
 """
 This module contains Application class.
 """
+
 from datetime import datetime
 from time import sleep
-
 from typing import Any, List
 
 from boto3.dynamodb.conditions import Attr
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
-from mypy_boto3_athena import AthenaClient
 
+from FlaskApp import current_app
 from utils import constants
 
 
@@ -18,82 +17,64 @@ class Application:
     This class represents an analytical application.
     """
 
-    def __init__(
-        self,
-        athena: AthenaClient,
-        application_ID: str,
-        application_data: dict[str, Any],
-    ):
-        self.__athena = athena
+    def __init__(self, application_ID: str, application_data: dict[str, Any]):
         self.__application_ID = application_ID
         self.__data = application_data
 
     @classmethod
-    def from_ID(
-        cls,
-        database: DynamoDBServiceResource,
-        athena: AthenaClient,
-        application_ID: str,
-    ):
+    def from_ID(cls, application_ID: str):
         """
         This method creates an instance of RemoteConfig from ID. It fetches database.
         It returns None if there is no RemoteConfig with this ID.
         """
-        response = database.Table(constants.TABLE_APPLICATIONS).get_item(
+        response = Application.__table_applications().get_item(
             Key={"application_id": application_ID}
         )
         if item := response.get("Item"):
-            return cls(athena, item.pop("application_id"), item)
+            return cls(item.pop("application_id"), item)
 
     @staticmethod
-    def application_IDs_to_tags(
-        database: DynamoDBServiceResource, application_IDs: list[str]
-    ) -> list[str]:
+    def application_IDs_to_tags(application_IDs: list[str]) -> list[str]:
         """
         This staticmethod returns a list of Application that match the <tags>.
         """
         if not application_IDs:
             return []
 
-        response = database.Table(constants.TABLE_APPLICATIONS).scan(
+        response = Application.__table_applications().scan(
             FilterExpression=Attr("application_id").is_in(application_IDs)
         )
         return sorted(set(item["tag"] for item in response["Items"]))
 
     @staticmethod
-    def exists(database: DynamoDBServiceResource, application_ID: str) -> bool:
+    def exists(application_ID: str) -> bool:
         """
         This property returns True if Application exists, else False.
         """
-        response = database.Table(constants.TABLE_APPLICATIONS).get_item(
+        response = Application.__table_applications().get_item(
             Key={"application_id": application_ID}
         )
         return "Item" in response
 
     @staticmethod
-    def get_all(
-        database: DynamoDBServiceResource, athena: AthenaClient
-    ) -> List["Application"]:
+    def get_all() -> List["Application"]:
         """
         This static method returns all applications.
         """
-        response = database.Table(constants.TABLE_APPLICATIONS).scan()
+        response = Application.__table_applications().scan()
         return [
-            Application(athena, item.pop("application_id"), item)
-            for item in response["Items"]
+            Application(item.pop("application_id"), item) for item in response["Items"]
         ]
 
     @staticmethod
-    def tags_to_application_IDs(
-        database: DynamoDBServiceResource, tags: list[str]
-    ) -> list[str]:
+    def tags_to_application_IDs(tags: list[str]) -> list[str]:
         """
         This staticmethod returns a list of Application that match the <tags>.
         """
         if not tags:
             return []
 
-        response = database.Table(constants.TABLE_APPLICATIONS).scan(
+        response = Application.__table_applications().scan(
             FilterExpression=Attr("tag").is_in(tags)
         )
         return [item["application_id"] for item in response["Items"]]
@@ -111,7 +92,7 @@ class Application:
         """
         now = datetime.now()
         # Start Athena Query
-        response = self.__athena.start_query_execution(
+        response = current_app.athena.start_query_execution(
             QueryString=f"""
                 SELECT *
                 FROM {constants.ANALYTICS_TABLE}
@@ -128,7 +109,7 @@ class Application:
         while True:
             # Wait for the query to be executed
             sleep(0.5)  # To avoid spamming requests
-            query_status = self.__athena.get_query_execution(
+            query_status = current_app.athena.get_query_execution(
                 QueryExecutionId=query_execution_id
             )["QueryExecution"]["Status"]
             if query_status["State"] not in ("QUEUED", "RUNNING"):
@@ -140,7 +121,7 @@ class Application:
             )
 
         # Get Athena Query Results
-        query_results = self.__athena.get_query_results(
+        query_results = current_app.athena.get_query_results(
             QueryExecutionId=response["QueryExecutionId"]
         )
         result_set = query_results["ResultSet"]
@@ -162,3 +143,7 @@ class Application:
         This method returns a dict that represents the Application.
         """
         return self.__data | {"application_id": self.__application_ID}
+
+    @staticmethod
+    def __table_applications():
+        return current_app.database.Table(constants.TABLE_APPLICATIONS)
