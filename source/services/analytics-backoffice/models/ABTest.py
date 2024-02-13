@@ -1,12 +1,13 @@
 """
 This module contains ABTest class.
 """
+
 from decimal import Decimal
 from typing import Any
 
 from boto3.dynamodb.conditions import Key
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
+from FlaskApp import current_app
 from utils import constants
 
 
@@ -19,21 +20,19 @@ class ABTest:
         self.__assert_data(data)
 
     @staticmethod
-    def purge_users_abtests(
-        database: DynamoDBServiceResource, remote_config_name: str, audience_name: str
-    ):
+    def purge_users_abtests(remote_config_name: str, audience_name: str):
         """
         This method purges all UsersABTests links to <remote_config_name> and <audience_name>.
         """
-        table = database.Table(constants.TABLE_USERS_ABTESTS)
-        response = table.query(
+        # table = current_app.database.Table(constants.TABLE_USERS_ABTESTS)
+        response = ABTest.__table_users_abtests().query(
             IndexName="abtest_ID-index",
             KeyConditionExpression=Key("abtest_ID").eq(
                 f"{remote_config_name}-{audience_name}"
             ),
         )
 
-        with table.batch_writer() as batch:
+        with ABTest.__table_users_abtests().batch_writer() as batch:
             for item in response["Items"]:
                 batch.delete_item(
                     Key={"uid": item["uid"], "abtest_ID": item["abtest_ID"]}
@@ -60,3 +59,7 @@ class ABTest:
             ), "`variants` should be a non-empty list of non-empty strings"
 
         assert len(to_assert) == 0, f"Unexpected fields -> {to_assert.keys()}"
+
+    @staticmethod
+    def __table_users_abtests():
+        return current_app.database.Table(constants.TABLE_USERS_ABTESTS)

@@ -1,9 +1,8 @@
 """
 This module contains audiences endpoints.
 """
-from flask import Blueprint, current_app, jsonify, request
 
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
+from flask import Blueprint, jsonify, request
 
 from models.Audience import Audience
 from models.RemoteConfig import RemoteConfig
@@ -17,8 +16,7 @@ def get_audiences():
     """
     This endpoint returns all audiences.
     """
-    database: DynamoDBServiceResource = current_app.config["database"]
-    return jsonify(Audience.get_all(database))
+    return jsonify(Audience.get_all())
 
 
 @audiences_endpoints.post("/<audience_name>")
@@ -26,11 +24,10 @@ def set_audience(audience_name: str):
     """
     This endpoint sets an audience.
     """
-    database: DynamoDBServiceResource = current_app.config["database"]
     payload = request.get_json(force=True) | {"audience_name": audience_name}
 
     try:
-        audience = Audience(database, payload)
+        audience = Audience(payload)
     except AssertionError as e:
         return jsonify(error=str(e)), 400
     except KeyError as e:
@@ -45,9 +42,7 @@ def delete_audience(audience_name: str):
     """
     This endpoint deletes an audience.
     """
-    database: DynamoDBServiceResource = current_app.config["database"]
-
-    audience = Audience.from_database(database, audience_name)
+    audience = Audience.from_database(audience_name)
     if not audience:
         return (
             jsonify(error=f"There is no audience with {audience_name} audience_name"),
@@ -55,7 +50,7 @@ def delete_audience(audience_name: str):
         )
 
     try:
-        RemoteConfig.purge_from_audience(database, audience_name)
+        RemoteConfig.purge_from_audience(audience_name)
     except ValueError as e:
         return jsonify(error=str(e)), 400
 

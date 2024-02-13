@@ -5,6 +5,7 @@
         "s3_bucket": "zappa-bucket-%%AWS_REGION%%",
         "environment_variables": {
             "GEODE_ENVIRONMENT": "sandbox",
+            "PROD_REGION": "%%PROD_REGION%%",
             "PROJECT_NAME": "%%PROJECT_NAME%%"
         },
         "profile_name": "%%PROFILE_NAME%%",
@@ -18,6 +19,7 @@
         "s3_bucket": "zappa-bucket-%%AWS_REGION%%",
         "environment_variables": {
             "GEODE_ENVIRONMENT": "dev",
+            "PROD_REGION": "%%PROD_REGION%%",
             "PROJECT_NAME": "%%PROJECT_NAME%%"
         },
         "geode_base_path": "analytics-backoffice",
@@ -33,6 +35,7 @@
         "s3_bucket": "zappa-bucket-%%AWS_REGION%%",
         "environment_variables": {
             "GEODE_ENVIRONMENT": "prod",
+            "PROD_REGION": "%%PROD_REGION%%",
             "PROJECT_NAME": "%%PROJECT_NAME%%"
         },
         "geode_base_path": "analytics-backoffice",
