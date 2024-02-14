@@ -117,7 +117,6 @@ class Audience:
 
     @staticmethod
     def __table_audiences():
-        database = current_app.sandbox_database
         if os.environ["GEODE_ENVIRONMENT"] in ("prod", "dev"):
-            database = current_app.prod_database
-        return database.Table(constants.TABLE_AUDIENCES)
+            return current_app.prod_database.Table(constants.TABLE_AUDIENCES_PROD)
+        return current_app.sandbox_database.Table(constants.TABLE_AUDIENCES_SANDBOX)

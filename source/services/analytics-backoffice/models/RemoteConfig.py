@@ -211,12 +211,17 @@ class RemoteConfig:
         By default we work on the deployed environment. \n
         We leave the possibility of switching environments if necessary.
         """
-        database = current_app.database
         match environment:
             case "prod":
-                database = current_app.prod_database
+                return current_app.prod_database.Table(
+                    constants.TABLE_REMOTE_CONFIGS_PROD
+                )
             case "dev":
-                database = current_app.dev_database
+                return current_app.dev_database.Table(
+                    constants.TABLE_REMOTE_CONFIGS_DEV
+                )
             case "sandbox":
-                database = current_app.sandbox_database
-        return database.Table(constants.TABLE_REMOTE_CONFIGS)
+                return current_app.sandbox_database.Table(
+                    constants.TABLE_REMOTE_CONFIGS_SANDBOX
+                )
+        return current_app.database.Table(constants.TABLE_REMOTE_CONFIGS)

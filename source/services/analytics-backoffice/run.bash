@@ -10,7 +10,7 @@ export SANDBOX_REGION=$(aws configure get region --profile sandbox)
 if [ $BRANCH_NAME = "master" ]; then
     export GEODE_ENVIRONMENT="prod"
 elif [ $BRANCH_NAME = "dev" ]; then
-    export GEODE_ENVIRONMENT="dev"
+    export GEODE_ENVIRONMENT="prod"
 else
     export GEODE_ENVIRONMENT="sandbox"
 fi
