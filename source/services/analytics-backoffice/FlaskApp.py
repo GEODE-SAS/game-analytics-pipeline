@@ -49,6 +49,12 @@ class FlaskApp(Flask):
         self.config["prod_database"] = boto3.resource(
             "dynamodb", region_name=os.environ["PROD_REGION"]
         )
+        self.config["dev_database"] = boto3.resource(
+            "dynamodb", region_name=os.environ["DEV_REGION"]
+        )
+        self.config["sandbox_database"] = boto3.resource(
+            "dynamodb", region_name=os.environ["SANDBOX_REGION"]
+        )
 
         @self.after_request
         def after_request(response: wrappers.Response):
@@ -85,11 +91,25 @@ class FlaskApp(Flask):
         return self.config["database"]
 
     @property
+    def dev_database(self) -> DynamoDBServiceResource:
+        """
+        This property returns instance of dev database.
+        """
+        return self.config["dev_database"]
+
+    @property
     def prod_database(self) -> DynamoDBServiceResource:
         """
-        This property returns instance of database.
+        This property returns instance of prod database.
         """
         return self.config["prod_database"]
+
+    @property
+    def sandbox_database(self) -> DynamoDBServiceResource:
+        """
+        This property returns instance of dev database.
+        """
+        return self.config["sandbox_database"]
 
 
 current_app: FlaskApp = flask.current_app

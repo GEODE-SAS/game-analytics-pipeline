@@ -2,6 +2,7 @@
 This module contains Audience class.
 """
 
+import os
 from typing import Any, List
 
 from FlaskApp import current_app
@@ -116,4 +117,7 @@ class Audience:
 
     @staticmethod
     def __table_audiences():
-        return current_app.prod_database.Table(constants.TABLE_AUDIENCES)
+        database = current_app.sandbox_database
+        if os.environ["GEODE_ENVIRONMENT"] in ("prod", "dev"):
+            database = current_app.prod_database
+        return database.Table(constants.TABLE_AUDIENCES)
