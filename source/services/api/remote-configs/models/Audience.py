@@ -3,6 +3,7 @@ This module contains Audience class.
 """
 
 import contextlib
+import os
 from typing import Any, List
 
 from boto3.dynamodb.conditions import Key
@@ -29,7 +30,7 @@ class Audience:
         """
         This static method returns a list of all property_based Audiences for uid.
         """
-        response = dynamodb.Table(constants.AUDIENCES_TABLE).query(
+        response = Audience.__audiences_table(dynamodb).query(
             IndexName="type-index",
             KeyConditionExpression=Key("type").eq("developer"),
         )
@@ -56,7 +57,7 @@ class Audience:
         """
         This static method returns a list of all property_based Audiences for uid.
         """
-        response = dynamodb.Table(constants.AUDIENCES_TABLE).query(
+        response = Audience.__audiences_table(dynamodb).query(
             IndexName="type-index",
             KeyConditionExpression=Key("type").eq("property_based"),
         )
@@ -87,3 +88,9 @@ class Audience:
                     audiences.append(Audience(item["audience_name"]))
 
         return audiences
+
+    @staticmethod
+    def __audiences_table(dynamodb: DynamoDBServiceResource):
+        if os.environ["GEODE_ENVIRONMENT"] in ("dev", "prod"):
+            return dynamodb.Table(constants.AUDIENCES_TABLE_PROD)
+        return dynamodb.Table(constants.AUDIENCES_TABLE_SANDBOX)

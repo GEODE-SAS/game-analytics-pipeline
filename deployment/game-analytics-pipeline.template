@@ -236,7 +236,13 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          AUDIENCES_TABLE: !Ref AudiencesTable
+          AUDIENCES_TABLE_PROD: '%%PROJECT_NAME%%-prod-audiences'
+          AUDIENCES_TABLE_DEV: '%%PROJECT_NAME%%-dev-audiences'
+          AUDIENCES_TABLE_SANDBOX: '%%PROJECT_NAME%%-sandbox-audiences'
+          PROD_REGION: '%%PROD_REGION%%'
+          DEV_REGION: '%%DEV_REGION%%'
+          SANDBOX_REGION: '%%SANDBOX_REGION%%'
+          GEODE_ENVIRONMENT: '%%GEODE_ENVIRONMENT%%'
           REMOTE_CONFIGS_TABLE: !Ref RemoteConfigsTable
           USERS_ABTESTS_TABLE: !Ref UsersABTestsTable
           USERS_AUDIENCES_TABLE: !Ref UsersAudiencesTable
@@ -265,12 +271,16 @@ Resources:
             Resource:
               - !GetAtt RemoteConfigsTable.Arn
               - !Sub ${RemoteConfigsTable.Arn}/index/*
-              - !GetAtt AudiencesTable.Arn
-              - !Sub ${AudiencesTable.Arn}/index/*
               - !GetAtt UsersABTestsTable.Arn
               - !Sub ${UsersABTestsTable.Arn}/index/*
               - !GetAtt UsersAudiencesTable.Arn
               - !Sub ${UsersAudiencesTable.Arn}/index/*
+              - !Sub 'arn:aws:dynamodb:%%PROD_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-prod-audiences'
+              - !Sub 'arn:aws:dynamodb:%%PROD_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-prod-audiences/index/*'
+              - !Sub 'arn:aws:dynamodb:%%DEV_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-dev-audiences'
+              - !Sub 'arn:aws:dynamodb:%%DEV_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-dev-audiences/index/*'
+              - !Sub 'arn:aws:dynamodb:%%SANDBOX_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-sandbox-audiences'
+              - !Sub 'arn:aws:dynamodb:%%SANDBOX_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-sandbox-audiences/index/*'
     Metadata:
       cfn_nag:
         rules_to_suppress:

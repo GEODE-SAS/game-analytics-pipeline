@@ -1,6 +1,6 @@
 # Global Config
 PROJECT_NAME="geode-analytics"
-VERSION="2.0.7"
+VERSION="2.0.8"
 
 # Check if we should deployed in China or World project
 export IS_CHINA=false
@@ -43,7 +43,7 @@ aws s3 mb s3://$DIST_OUTPUT_BUCKET-$GEODE_AWS_REGION --region $GEODE_AWS_REGION 
 cd ./deployment
 
 # Build project (Templates + Lambdas)
-./build-s3-dist.sh $DIST_OUTPUT_BUCKET $SOLUTION_NAME $VERSION
+./build-s3-dist.sh $DIST_OUTPUT_BUCKET $SOLUTION_NAME $VERSION $PROJECT_NAME
 
 # Store Global Assets to S3 (Templates)
 aws s3 cp ./global-s3-assets s3://$DIST_OUTPUT_BUCKET-$GEODE_AWS_REGION/$SOLUTION_NAME/$VERSION --recursive --acl bucket-owner-full-control

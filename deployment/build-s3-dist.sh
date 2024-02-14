@@ -83,6 +83,36 @@ replace="s|%%VERSION%%|$3|g"
 echo "sed -i -e $replace $template_dist_dir/*.template"
 sed -i -e $replace $template_dist_dir/*.template
 
+PROD_PROFILE="prod"
+DEV_PROFILE="dev"
+SANDBOX_PROFILE="sandbox"
+
+if $IS_CHINA; then
+    PROD_PROFILE="$PROD_PROFILE-china"
+    DEV_PROFILE="$DEV_PROFILE-china"
+    SANDBOX_PROFILE="$SANDBOX_PROFILE-china"
+fi
+
+PROD_AWS_REGION=$(aws configure get region --profile $PROD_PROFILE)
+DEV_AWS_REGION=$(aws configure get region --profile $DEV_PROFILE)
+SANDBOX_AWS_REGION=$(aws configure get region --profile $SANDBOX_PROFILE)
+
+replace="s|%%PROJECT_NAME%%|$4|g"
+echo "sed -i -e $replace $template_dist_dir/*.template"
+sed -i -e $replace $template_dist_dir/*.template
+replace="s|%%PROD_REGION%%|$PROD_AWS_REGION|g"
+echo "sed -i -e $replace $template_dist_dir/*.template"
+sed -i -e $replace $template_dist_dir/*.template
+replace="s|%%DEV_REGION%%|$DEV_AWS_REGION|g"
+echo "sed -i -e $replace $template_dist_dir/*.template"
+sed -i -e $replace $template_dist_dir/*.template
+replace="s|%%SANDBOX_REGION%%|$SANDBOX_AWS_REGION|g"
+echo "sed -i -e $replace $template_dist_dir/*.template"
+sed -i -e $replace $template_dist_dir/*.template
+replace="s|%%GEODE_ENVIRONMENT%%|$GEODE_ENVIRONMENT|g"
+echo "sed -i -e $replace $template_dist_dir/*.template"
+sed -i -e $replace $template_dist_dir/*.template
+
 echo "------------------------------------------------------------------------------"
 echo "Packaging Lambda Function - Analytics Processing"
 echo "------------------------------------------------------------------------------"
