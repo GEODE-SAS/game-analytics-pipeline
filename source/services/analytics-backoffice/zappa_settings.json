@@ -4,9 +4,11 @@
         "aws_region": "%%AWS_REGION%%",
         "s3_bucket": "zappa-bucket-%%AWS_REGION%%",
         "environment_variables": {
+            "DEV_REGION": "%%DEV_REGION%%",
             "GEODE_ENVIRONMENT": "sandbox",
             "PROD_REGION": "%%PROD_REGION%%",
-            "PROJECT_NAME": "%%PROJECT_NAME%%"
+            "PROJECT_NAME": "%%PROJECT_NAME%%",
+            "SANDBOX_REGION": "%%SANDBOX_REGION%%"
         },
         "profile_name": "%%PROFILE_NAME%%",
         "project_name": "%%PROJECT_NAME%%-backoffice",
@@ -18,9 +20,11 @@
         "aws_region": "%%AWS_REGION%%",
         "s3_bucket": "zappa-bucket-%%AWS_REGION%%",
         "environment_variables": {
+            "DEV_REGION": "%%DEV_REGION%%",
             "GEODE_ENVIRONMENT": "dev",
             "PROD_REGION": "%%PROD_REGION%%",
-            "PROJECT_NAME": "%%PROJECT_NAME%%"
+            "PROJECT_NAME": "%%PROJECT_NAME%%",
+            "SANDBOX_REGION": "%%SANDBOX_REGION%%"
         },
         "geode_base_path": "analytics-backoffice",
         "geode_domain_name": "%%GEODE_DOMAIN_NAME%%",
@@ -34,9 +38,11 @@
         "aws_region": "%%AWS_REGION%%",
         "s3_bucket": "zappa-bucket-%%AWS_REGION%%",
         "environment_variables": {
+            "DEV_REGION": "%%DEV_REGION%%",
             "GEODE_ENVIRONMENT": "prod",
             "PROD_REGION": "%%PROD_REGION%%",
-            "PROJECT_NAME": "%%PROJECT_NAME%%"
+            "PROJECT_NAME": "%%PROJECT_NAME%%",
+            "SANDBOX_REGION": "%%SANDBOX_REGION%%"
         },
         "geode_base_path": "analytics-backoffice",
         "geode_domain_name": "%%GEODE_DOMAIN_NAME%%",

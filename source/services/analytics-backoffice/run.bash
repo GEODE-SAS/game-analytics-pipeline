@@ -4,12 +4,14 @@ BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
 export PROJECT_NAME="geode-analytics"
 
 export PROD_REGION=$(aws configure get region --profile prod)
+export DEV_REGION=$(aws configure get region --profile dev)
+export SANDBOX_REGION=$(aws configure get region --profile sandbox)
+
 if [ $BRANCH_NAME = "master" ]; then
     export GEODE_ENVIRONMENT="prod"
 elif [ $BRANCH_NAME = "dev" ]; then
-    export GEODE_ENVIRONMENT="dev"
+    export GEODE_ENVIRONMENT="prod"
 else
-    export PROD_REGION=$(aws configure get region --profile sandbox)
     export GEODE_ENVIRONMENT="sandbox"
 fi
 

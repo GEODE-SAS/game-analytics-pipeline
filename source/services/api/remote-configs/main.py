@@ -2,6 +2,7 @@
 Lambda handler
 """
 
+import os
 import sys
 from typing import Any
 
@@ -14,6 +15,13 @@ from models.UserABTest import UserABTest
 
 
 dynamodb = boto3.resource("dynamodb")
+prod_dynamodb = boto3.resource("dynamodb", region_name=os.environ["PROD_REGION"])
+dev_dynamodb = boto3.resource("dynamodb", region_name=os.environ["DEV_REGION"])
+sandbox_dynamodb = boto3.resource("dynamodb", region_name=os.environ["SANDBOX_REGION"])
+
+audience_dynamodb = sandbox_dynamodb
+if os.environ["GEODE_ENVIRONMENT"] in ("dev", "prod"):
+    audience_dynamodb = prod_dynamodb
 
 
 def handler(event: dict[str, Any], context: dict[str, Any]):
@@ -35,8 +43,8 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
 
     # Audience Priority : "developer", "property_based", "event_based", "ALL"
     user_audiences: list[Audience] = []
-    user_audiences.extend(Audience.developer_audiences(dynamodb, payload))
-    user_audiences.extend(Audience.property_based_audiences(dynamodb, payload))
+    user_audiences.extend(Audience.developer_audiences(audience_dynamodb, payload))
+    user_audiences.extend(Audience.property_based_audiences(audience_dynamodb, payload))
     user_audiences.extend(Audience.event_based_audiences(dynamodb, user_ID))
     user_audience_names = [audience.audience_name for audience in user_audiences] + [
         "ALL"

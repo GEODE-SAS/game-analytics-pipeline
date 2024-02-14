@@ -2,6 +2,7 @@
 This module contains RemoteConfig class.
 """
 
+import os
 from typing import Any, List
 
 from FlaskApp import current_app
@@ -37,11 +38,11 @@ class RemoteConfig:
             return cls(item)
 
     @staticmethod
-    def get_all() -> List["RemoteConfig"]:
+    def get_all(environment: str = "") -> List["RemoteConfig"]:
         """
         This static method returns all remote configs.
         """
-        response = RemoteConfig.__table_remote_configs().scan()
+        response = RemoteConfig.__table_remote_configs(environment).scan()
         return [RemoteConfig(item) for item in response["Items"]]
 
     @staticmethod
@@ -50,29 +51,37 @@ class RemoteConfig:
         This static method purges all overrides related to <audience_name>.
         It raises ValueError if there are active overrides with this audience.
         """
-        remote_configs = RemoteConfig.get_all()
+        environments = (
+            ["dev", "prod"]
+            if os.environ["GEODE_ENVIRONMENT"] in ("dev", "prod")
+            else ["sandbox"]
+        )
 
-        # Fisrt, check if there are active overrides with this audience.
-        for remote_config in remote_configs:
-            override = remote_config.overrides.get(audience_name)
-            if not override:
-                continue
+        for environment in environments:
+            remote_configs = RemoteConfig.get_all(environment)
 
-            if override.active:
-                raise ValueError(
-                    f"The audience is active on {remote_config.remote_config_name}"
+            # Fisrt, check if there are active overrides with this audience.
+            for remote_config in remote_configs:
+                override = remote_config.overrides.get(audience_name)
+                if not override:
+                    continue
+
+                if override.active:
+                    raise ValueError(
+                        f"The audience is active on {remote_config.remote_config_name}"
+                    )
+
+            # Now we purge this audience from all overrides.
+            for remote_config in remote_configs:
+                override = remote_config.overrides.get(audience_name)
+                if not override:
+                    continue
+
+                RemoteConfig.__table_remote_configs(environment).update_item(
+                    ExpressionAttributeNames={"#audience": audience_name},
+                    Key={"remote_config_name": remote_config.remote_config_name},
+                    UpdateExpression="REMOVE overrides.#audience",
                 )
-
-        # Now we purge this audience from all overrides.
-        for remote_config in remote_configs:
-            override = remote_config.overrides.get(audience_name)
-            if not override:
-                continue
-
-            RemoteConfig.__table_remote_configs().update_item(
-                Key={"remote_config_name": remote_config.remote_config_name},
-                UpdateExpression=f"REMOVE overrides.{audience_name}",
-            )
 
     @property
     def application_IDs(self) -> list[str]:
@@ -197,5 +206,22 @@ class RemoteConfig:
                     ABTest.purge_users_abtests(self.remote_config_name, audience_name)
 
     @staticmethod
-    def __table_remote_configs():
+    def __table_remote_configs(environment: str = ""):
+        """
+        By default we work on the deployed environment. \n
+        We leave the possibility of switching environments if necessary.
+        """
+        match environment:
+            case "prod":
+                return current_app.prod_database.Table(
+                    constants.TABLE_REMOTE_CONFIGS_PROD
+                )
+            case "dev":
+                return current_app.dev_database.Table(
+                    constants.TABLE_REMOTE_CONFIGS_DEV
+                )
+            case "sandbox":
+                return current_app.sandbox_database.Table(
+                    constants.TABLE_REMOTE_CONFIGS_SANDBOX
+                )
         return current_app.database.Table(constants.TABLE_REMOTE_CONFIGS)
