@@ -1105,9 +1105,9 @@ Resources:
           - Id: DeleteAthenaQueryResults
             Prefix: 'athena-query-results/'
             Status: Enabled
-            ExpirationInDays: 0
+            ExpirationInDays: 1
             NoncurrentVersionExpiration:
-              NoncurrentDays: 0
+              NoncurrentDays: 1
     Metadata:
       cfn_nag:
         rules_to_suppress:
