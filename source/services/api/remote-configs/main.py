@@ -35,7 +35,7 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
     result = {}
     application_ID = event["applicationId"]
     user_ID = event["userId"]
-    payload = event["payload"] | {"country": event["country"]}
+    payload: dict[str, Any] = event["payload"] | {"country": event["country"]}
 
     remote_configs = RemoteConfig.get_all(dynamodb, application_ID)
     if not remote_configs:
@@ -50,7 +50,13 @@ def handler(event: dict[str, Any], context: dict[str, Any]):
         "ALL"
     ]
 
+    start_first_session_date = payload.get("start_first_session_date", 0)
+
     for remote_config in remote_configs:
+        if start_first_session_date < remote_config.new_users_threshold:
+            # The user is NOT considered a "New User" for this Remote Config
+            continue
+
         # First, we search if there is an active override that matches with user audiences.
         user_audience = None
         user_override = None

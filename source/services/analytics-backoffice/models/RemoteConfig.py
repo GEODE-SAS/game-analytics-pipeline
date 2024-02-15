@@ -2,6 +2,7 @@
 This module contains RemoteConfig class.
 """
 
+from decimal import Decimal
 import os
 from typing import Any, List
 
@@ -108,6 +109,13 @@ class RemoteConfig:
         return False
 
     @property
+    def new_users_threshold(self) -> int:
+        """
+        This method returns new_users_threshold.
+        """
+        return self.__data["new_users_threshold"]
+
+    @property
     def overrides(self) -> dict[str, RemoteConfigOverride]:
         """
         This method returns overrides.
@@ -153,6 +161,7 @@ class RemoteConfig:
                 "remote_config_name": self.remote_config_name,
                 "applications": self.application_IDs,
                 "description": self.description,
+                "new_users_threshold": self.new_users_threshold,
                 "reference_value": self.reference_value,
                 "overrides": {
                     audience_name: override.to_dict()
@@ -162,17 +171,25 @@ class RemoteConfig:
         )
 
     def __assert_data(self, data: dict[str, Any]):
-        data = data.copy()
-        application_IDs = data.pop("applications")
-        description = data.pop("description")
-        overrides = data.pop("overrides")
-        reference_value = data.pop("reference_value")
-        remote_config_name = data.pop("remote_config_name")
+        to_assert = data.copy()
+        application_IDs = to_assert.pop("applications")
+        description = to_assert.pop("description")
+        new_users_threshold = to_assert.pop("new_users_threshold")
+        overrides = to_assert.pop("overrides")
+        reference_value = to_assert.pop("reference_value")
+        remote_config_name = to_assert.pop("remote_config_name")
+
+        if isinstance(new_users_threshold, Decimal):
+            new_users_threshold = int(new_users_threshold)
+            data["new_users_threshold"] = new_users_threshold
 
         assert isinstance(
             application_IDs, list
         ), "`applications` should be a list of non-empty string"
         assert isinstance(description, str), "`description` should be string"
+        assert (
+            isinstance(new_users_threshold, int) and new_users_threshold >= 0
+        ), "`new_users_threshold` should be int greater than or equal to 0"
         assert isinstance(overrides, dict), "`overrides` should be dict[str, dict]"
         assert isinstance(reference_value, str), "`reference_value` should be string"
         assert (
@@ -190,7 +207,7 @@ class RemoteConfig:
             ), f"`audience_name` {audience_name} NOT exists"
             assert isinstance(override, dict), "`overrides` should be dict[str, dict]"
 
-        assert len(data) == 0, f"Unexpected fields -> {data.keys()}"
+        assert len(to_assert) == 0, f"Unexpected fields -> {to_assert.keys()}"
 
     def __purge_users_abtests(self, all_abtests: bool = False):
         """
