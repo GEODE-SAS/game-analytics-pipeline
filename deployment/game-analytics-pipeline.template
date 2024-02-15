@@ -275,12 +275,12 @@ Resources:
               - !Sub ${UsersABTestsTable.Arn}/index/*
               - !GetAtt UsersAudiencesTable.Arn
               - !Sub ${UsersAudiencesTable.Arn}/index/*
-              - !Sub 'arn:aws:dynamodb:%%PROD_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-prod-audiences'
-              - !Sub 'arn:aws:dynamodb:%%PROD_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-prod-audiences/index/*'
-              - !Sub 'arn:aws:dynamodb:%%DEV_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-dev-audiences'
-              - !Sub 'arn:aws:dynamodb:%%DEV_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-dev-audiences/index/*'
-              - !Sub 'arn:aws:dynamodb:%%SANDBOX_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-sandbox-audiences'
-              - !Sub 'arn:aws:dynamodb:%%SANDBOX_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-sandbox-audiences/index/*'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:%%PROD_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-prod-audiences'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:%%PROD_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-prod-audiences/index/*'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:%%DEV_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-dev-audiences'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:%%DEV_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-dev-audiences/index/*'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:%%SANDBOX_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-sandbox-audiences'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:%%SANDBOX_REGION%%:${AWS::AccountId}:table/%%PROJECT_NAME%%-sandbox-audiences/index/*'
     Metadata:
       cfn_nag:
         rules_to_suppress:
@@ -1105,9 +1105,9 @@ Resources:
           - Id: DeleteAthenaQueryResults
             Prefix: 'athena-query-results/'
             Status: Enabled
-            ExpirationInDays: 7
+            ExpirationInDays: 1
             NoncurrentVersionExpiration:
-              NoncurrentDays: 7
+              NoncurrentDays: 1
     Metadata:
       cfn_nag:
         rules_to_suppress:
