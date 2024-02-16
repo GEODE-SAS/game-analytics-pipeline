@@ -6,12 +6,14 @@ from FlaskApp import FlaskApp
 
 from blueprints.applications import applications_endpoints
 from blueprints.audiences import audiences_endpoints
+from blueprints.history import history_endpoints
 from blueprints.remote_configs import remote_configs_endpoints
 
 
 app = FlaskApp(__name__)
 app.register_blueprint(applications_endpoints, url_prefix="/applications")
 app.register_blueprint(audiences_endpoints, url_prefix="/audiences")
+app.register_blueprint(history_endpoints, url_prefix="/history")
 app.register_blueprint(remote_configs_endpoints, url_prefix="/remote-configs")
 
 

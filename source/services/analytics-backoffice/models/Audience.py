@@ -6,6 +6,7 @@ import os
 from typing import Any, List
 
 from FlaskApp import current_app
+from models.History import HistoryItem
 from utils import constants
 
 
@@ -15,6 +16,9 @@ class Audience:
     Warning : We use only prod_database. (In Sandbox, prod_database = sandbox_database)
     """
 
+    __dynamodb_environment = (
+        "prod" if os.environ["GEODE_ENVIRONMENT"] in ("prod", "dev") else "sandbox"
+    )
     __types = ("developer", "event_based", "property_based")
 
     def __init__(self, data: dict[str, Any]):
@@ -74,9 +78,13 @@ class Audience:
         """
         This method deletes audience from database.
         """
-        Audience.__table_audiences().delete_item(
-            Key={"audience_name": self.audience_name}
+        table = Audience.__table_audiences()
+        table.delete_item(Key={"audience_name": self.audience_name})
+
+        history_item = HistoryItem(
+            method="DELETE", old_item=self.__item, table_name=table.table_name
         )
+        history_item.update_database(environment=self.__dynamodb_environment)
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -88,14 +96,7 @@ class Audience:
         """
         This method updates RemoteConfigCondition to database.
         """
-        Audience.__table_audiences().put_item(
-            Item={
-                "audience_name": self.audience_name,
-                "condition": self.condition,
-                "created_by": self.created_by,
-                "type": self.type,
-            }
-        )
+        Audience.__table_audiences().put_item(Item=self.__item)
 
     def __assert_data(self, data: dict[str, Any]):
         data = data.copy()
@@ -115,8 +116,17 @@ class Audience:
 
         assert len(data) == 0, f"Unexpected fields -> {data.keys()}"
 
+    @property
+    def __item(self) -> dict[str, Any]:
+        return {
+            "audience_name": self.audience_name,
+            "condition": self.condition,
+            "created_by": self.created_by,
+            "type": self.type,
+        }
+
     @staticmethod
     def __table_audiences():
-        if os.environ["GEODE_ENVIRONMENT"] in ("prod", "dev"):
+        if Audience.__dynamodb_environment == "prod":
             return current_app.prod_database.Table(constants.TABLE_AUDIENCES_PROD)
         return current_app.sandbox_database.Table(constants.TABLE_AUDIENCES_SANDBOX)

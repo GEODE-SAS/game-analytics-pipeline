@@ -8,6 +8,7 @@ from typing import Any, List
 from FlaskApp import current_app
 from models.ABTest import ABTest
 from models.Audience import Audience
+from models.History import HistoryItem
 from models.RemoteConfigOverride import RemoteConfigOverride
 from utils import constants
 
@@ -132,10 +133,15 @@ class RemoteConfig:
         """
         This method deletes remote config from database.
         """
+        table = RemoteConfig.__table_remote_configs()
+
         self.__purge_users_abtests(all_abtests=True)
-        RemoteConfig.__table_remote_configs().delete_item(
-            Key={"remote_config_name": self.remote_config_name}
+        table.delete_item(Key={"remote_config_name": self.remote_config_name})
+
+        history_item = HistoryItem(
+            method="DELETE", old_item=self.__item, table_name=table.table_name
         )
+        history_item.update_database()
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -148,20 +154,23 @@ class RemoteConfig:
         This method creates RemoteConfig in database.
         """
         self.__purge_users_abtests()
-        RemoteConfig.__table_remote_configs().put_item(
-            Item={
-                "remote_config_name": self.remote_config_name,
-                "applications": self.application_IDs,
-                "description": self.description,
-                "reference_value": self.reference_value,
-                "overrides": {
-                    audience_name: override.to_dict()
-                    for audience_name, override in self.overrides.items()
-                },
-            }
-        )
+        RemoteConfig.__table_remote_configs().put_item(Item=self.__item)
+
+    @property
+    def __item(self) -> dict[str, Any]:
+        return {
+            "remote_config_name": self.remote_config_name,
+            "applications": self.application_IDs,
+            "description": self.description,
+            "reference_value": self.reference_value,
+            "overrides": {
+                audience_name: override.to_dict()
+                for audience_name, override in self.overrides.items()
+            },
+        }
 
     def __assert_data(self, data: dict[str, Any]):
+        data.pop("new_users_threshold", None)
         data = data.copy()
         application_IDs = data.pop("applications")
         description = data.pop("description")
