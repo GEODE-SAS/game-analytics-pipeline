@@ -1,9 +1,10 @@
 """
 This module contains RemoteConfig class.
 """
+
 from typing import Any, List
 
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Attr
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 from models.RemoteConfigOverride import RemoteConfigOverride
@@ -33,6 +34,13 @@ class RemoteConfig:
             FilterExpression=Attr("applications").contains(application_ID),
         )
         return [RemoteConfig(item) for item in response["Items"]]
+
+    @property
+    def new_users_threshold(self) -> int:
+        """
+        This method returns new_users_threshold.
+        """
+        return int(self.__data["new_users_threshold"])
 
     @property
     def overrides(self) -> dict[str, RemoteConfigOverride]:
