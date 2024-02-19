@@ -1,6 +1,6 @@
 # Global Config
 PROJECT_NAME="geode-analytics"
-VERSION="2.0.8"
+VERSION="2.0.9"
 
 # Check if we should deployed in China or World project
 export IS_CHINA=false
