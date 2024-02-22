@@ -71,7 +71,7 @@ def delete_remote_config(remote_config_name: str):
         return jsonify(error=f"Invalid remote_config_name : {remote_config_name}"), 400
 
     if remote_config.has_active_override:
-        return (jsonify(error="Remote config has active overrides"), 400)
+        return jsonify(error="Remote config has active overrides"), 400
 
     remote_config.delete()
     return jsonify(), 204
