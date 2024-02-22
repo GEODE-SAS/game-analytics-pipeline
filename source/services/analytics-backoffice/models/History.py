@@ -77,7 +77,7 @@ class HistoryItem:
         return self.__data["method"]
 
     @property
-    def old_item(self) -> str:
+    def old_item(self) -> dict[str, Any]:
         """
         This method returns old_item.
         """
